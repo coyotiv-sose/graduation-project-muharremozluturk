@@ -29,7 +29,7 @@ class Expert extends User {
     }
 
     const newSession = new Session(
-      Math.floor(Math.random() * 10000000),
+      Math.floor(Math.random() * 10000000) + 1000000,
       this,
       startTime,
       endTime,
@@ -104,6 +104,16 @@ class Expert extends User {
       hourlyRate: this.hourlyRate,
       totalSessions: this.availableSessions.length + this.bookings.length,
     }
+  }
+
+  get profile() {
+    return `
+    # Expert: ${this.name}
+    Mail: ${this.email} | Phone: ${this.phone}
+    Specialization: (${this.specialization}) - Rate: $${this.hourlyRate}/hr
+    # Available Sessions: ${this.availableSessions.length}
+    ${this.availableSessions.map(session => session.summary).join('\n    ')}
+    `
   }
 }
 

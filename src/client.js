@@ -84,6 +84,18 @@ class Client extends User {
       cancelledSessions: this.cancelledSessions.length,
     }
   }
+  get profile() {
+    return `
+      # Name: ${this.name}
+      Email: ${this.email}
+      ## Total Bookings: ${this.bookedSessions.length}
+      Booking List:
+      ${this.bookedSessions.map(session => session.summary).join('\n  ')}
+      ## Cancelled Sessions: ${this.cancelledSessions.length}
+      Cancelled Sessions List:
+      ${this.cancelledSessions.map(session => session.summary).join('\n')}
+    `
+  }
 }
 
 module.exports = Client

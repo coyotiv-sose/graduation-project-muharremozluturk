@@ -50,6 +50,10 @@ class Session {
       createdAt: this.createdAt,
     }
   }
+
+  get summary() {
+    return `-Session ${this.id} with Expert ${this.expert.name} from ${this.startTime} to ${this.endTime} (Status: ${this.status}, Clients: ${this.clients.length}/${this.maxParticipants})`
+  }
 }
 
 module.exports = Session

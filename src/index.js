@@ -178,3 +178,8 @@ console.log('\n=== Client 3 Cancelled Sessions After Cancellation ===')
 client3.cancelledSessions.forEach(session => {
   console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
+
+console.log(client1.profile)
+console.log(client2.profile)
+console.log(client3.profile)
+console.log(expert.profile)
