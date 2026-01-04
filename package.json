@@ -19,5 +19,9 @@
 		"eslint-plugin-prettier": "^4.2.1",
 		"nodemon": "^2.0.19",
 		"prettier": "^2.7.1"
+	},
+	"dependencies": {
+		"currency.js": "^2.0.4",
+		"date-format": "^4.0.14"
 	}
 }

@@ -1,3 +1,5 @@
+const format = require('date-format')
+
 class Session {
   constructor(id, expert, startTime, endTime, status = 'free', maxParticipants = 1) {
     if (!expert) {
@@ -52,7 +54,13 @@ class Session {
   }
 
   get summary() {
-    return `-Session ${this.id} with Expert ${this.expert.name} from ${this.startTime} to ${this.endTime} (Status: ${this.status}, Clients: ${this.clients.length}/${this.maxParticipants})`
+    console.log()
+    return `-Session ${this.id} with Expert ${this.expert.name} from ${format.asString(
+      'dd.MM.yyyy hh:mm',
+      this.startTime
+    )} to ${format.asString('dd.MM.yyyy hh:mm', this.endTime)} (Status: ${this.status}, Clients: ${
+      this.clients.length
+    }/${this.maxParticipants})`
   }
 }
 

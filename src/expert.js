@@ -1,5 +1,6 @@
 const User = require('./user.js')
 const Session = require('./session.js')
+const currency = require('currency.js')
 
 class Expert extends User {
   constructor(name, email, phone, specialization, hourlyRate) {
@@ -110,7 +111,7 @@ class Expert extends User {
     return `
     # Expert: ${this.name}
     Mail: ${this.email} | Phone: ${this.phone}
-    Specialization: (${this.specialization}) - Rate: $${this.hourlyRate}/hr
+    Specialization: (${this.specialization}) - Rate: ${currency(this.hourlyRate).format()}/hr
     # Available Sessions: ${this.availableSessions.length}
     ${this.availableSessions.map(session => session.summary).join('\n    ')}
     `
