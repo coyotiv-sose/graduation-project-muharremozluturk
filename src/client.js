@@ -4,22 +4,14 @@ const Session = require('./session.js')
 class Client extends User {
   constructor(name, email, phone) {
     super(name, email, phone)
-    this._bookedSessions = [] // Array to store booked sessions
-    this._cancelledSessions = [] // Array to store cancelled sessions
+    this.bookedSessions = [] // Array to store booked sessions
+    this.cancelledSessions = [] // Array to store cancelled sessions
   }
 
-  // Getters
-  get bookedSessions() {
-    return this._bookedSessions
-  }
-
-  get cancelledSessions() {
-    return this._cancelledSessions
-  }
   // Method to book a session
   bookSession(session) {
     // Check if session is already booked
-    if (this._bookedSessions.find(s => s.id === session.id)) {
+    if (this.bookedSessions.find(s => s.id === session.id)) {
       throw new Error('Session already booked by this client')
     }
 
@@ -37,19 +29,19 @@ class Client extends User {
     // Update session status
     session.status = 'booked'
 
-    this._bookedSessions.push(session)
+    this.bookedSessions.push(session)
     return session
   }
 
   // Method to cancel a booking
   cancelBooking(session) {
-    const index = this._bookedSessions.findIndex(s => s.id === session.id)
+    const index = this.bookedSessions.findIndex(s => s.id === session.id)
     if (index === -1) {
       throw new Error('Session not found in booked sessions')
     }
 
     // Remove session from booked sessions
-    const [cancelledSession] = this._bookedSessions.splice(index, 1)
+    const [cancelledSession] = this.bookedSessions.splice(index, 1)
 
     // Remove client from session
     const clientIndex = session.clients.findIndex(c => c === this)
@@ -58,13 +50,13 @@ class Client extends User {
     }
 
     // Update session status to cancelled
-    cancelledSession.status = 'cancelled'
+    cancelledSession.status = 'free'
 
     // Add to cancelled sessions
-    this._cancelledSessions.push(cancelledSession)
+    this.cancelledSessions.push(cancelledSession)
 
     // Notify expert to remove session from their schedule
-    session.expert.cancelSession(session)
+    session.expert.cancelBooking(session)
 
     return cancelledSession
   }
@@ -72,29 +64,24 @@ class Client extends User {
   // Method to get upcoming bookings
   getUpcomingBookings() {
     const now = new Date()
-    return this._bookedSessions.filter(session => {
+    return this.bookedSessions.filter(session => {
       return session.startTime > now && session.status !== 'cancelled'
     })
   }
 
   // Method to get session history (completed sessions)
   getSessionHistory() {
-    return this._bookedSessions.filter(session => session.status === 'completed')
-  }
-
-  // Method to get cancelled sessions
-  getCancelledSessions() {
-    return this._cancelledSessions
+    return this.bookedSessions.filter(session => session.status === 'completed')
   }
 
   // Method to get client info with bookings
   getClientInfo() {
     return {
       ...this.getUserInfo(),
-      totalBookings: this._bookedSessions.length,
+      totalBookings: this.bookedSessions.length,
       upcomingBookings: this.getUpcomingBookings().length,
       completedSessions: this.getSessionHistory().length,
-      cancelledSessions: this.getCancelledSessions().length,
+      cancelledSessions: this.cancelledSessions.length,
     }
   }
 }

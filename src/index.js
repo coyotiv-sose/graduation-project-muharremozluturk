@@ -48,12 +48,11 @@ cancelledStart.setHours(12, 0, 0, 0)
 const cancelledEnd = new Date(cancelledStart)
 cancelledEnd.setHours(13, 0, 0, 0)
 
-const cancelledSession = expert.createSession(cancelledStart, cancelledEnd, 'free', 1)
+const cancelledBookingbyClient = expert.createSession(cancelledStart, cancelledEnd, 'free', 1)
 
 // Client books and then cancels the session
-client1.bookSession(cancelledSession)
-client1.cancelBooking(cancelledSession)
-
+client1.bookSession(cancelledBookingbyClient)
+client1.cancelBooking(cancelledBookingbyClient)
 // Display information
 console.log('=== Expert Information ===')
 console.log(JSON.stringify(expert.getExpertInfo(), null, 2))
@@ -91,5 +90,91 @@ client1.bookedSessions.forEach(session => {
 
 console.log('\n=== Client 1 Cancelled Sessions ===')
 client1.cancelledSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+const cancelledBookingbyExpert = expert.createSession(
+  new Date(tomorrow.setHours(15, 0, 0, 0)),
+  new Date(tomorrow.setHours(16, 0, 0, 0)),
+  'free',
+  1
+)
+
+client2.bookSession(cancelledBookingbyExpert)
+console.log('\n=== Client 2 Booked Sessions Before Cancellation ===')
+client2.bookedSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+console.log('\n=== Client 2 Cancelled Sessions Before Cancellation ===')
+client2.cancelledSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+expert.cancelBooking(cancelledBookingbyExpert)
+
+console.log('\n=== Expert Available Sessions After Cancellation ===')
+expert.availableSessions.forEach(session => {
+  console.log(
+    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
+  )
+})
+
+console.log('\n=== Expert Booked Sessions After Cancellation ===')
+expert.bookings.forEach(session => {
+  console.log(
+    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
+  )
+})
+
+console.log('\n=== Client 2 Booked Sessions After Cancellation ===')
+client2.bookedSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+console.log('\n=== Client 2 Cancelled Sessions After Cancellation ===')
+client2.cancelledSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+const cancelledSession = expert.createSession(
+  new Date(tomorrow.setHours(17, 0, 0, 0)),
+  new Date(tomorrow.setHours(18, 0, 0, 0)),
+  'free',
+  1
+)
+
+client3.bookSession(cancelledSession)
+console.log('\n=== Client 3 Booked Sessions Before Cancellation ===')
+client3.bookedSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+console.log('\n=== Client 3 Cancelled Sessions Before Cancellation ===')
+client3.cancelledSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+expert.cancelSession(cancelledSession)
+console.log('\n=== Expert Available Sessions After Cancellation ===')
+expert.availableSessions.forEach(session => {
+  console.log(
+    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
+  )
+})
+
+console.log('\n=== Expert Booked Sessions After Cancellation ===')
+expert.bookings.forEach(session => {
+  console.log(
+    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
+  )
+})
+
+console.log('\n=== Client 3 Booked Sessions After Cancellation ===')
+client3.bookedSessions.forEach(session => {
+  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+})
+
+console.log('\n=== Client 3 Cancelled Sessions After Cancellation ===')
+client3.cancelledSessions.forEach(session => {
   console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
