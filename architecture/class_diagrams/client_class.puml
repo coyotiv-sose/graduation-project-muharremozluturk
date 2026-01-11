@@ -1,0 +1,16 @@
+@startuml Client
+!include User.puml
+
+class Client extends User {
+  - bookedSessions: Session[]
+  - cancelledSessions: Session[]
+
+  + constructor(name, email, phone)
+  + bookSession(session: Session): Session
+  + cancelBooking(session: Session): Session
+  + getUpcomingBookings(): Session[]
+  + getSessionHistory(): Session[]
+  + getClientInfo(): Object
+  + profile: String (getter)
+}
+@enduml

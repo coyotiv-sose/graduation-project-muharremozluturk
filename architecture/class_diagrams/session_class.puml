@@ -1,0 +1,19 @@
+@startuml Session
+class Session {
+  - id: Number
+  - expert: Expert
+  - startTime: Date
+  - endTime: Date
+  - _status: String
+  - createdAt: Date
+  - maxParticipants: Number
+  - clients: Client[]
+
+  + constructor(id, expert, startTime, endTime, status, maxParticipants)
+  + status: String (getter/setter)
+  + getDuration(): Number
+  + isFullyBooked(): Boolean
+  + getSessionInfo(): Object
+  + summary: String (getter)
+}
+@enduml

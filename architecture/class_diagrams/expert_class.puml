@@ -1,0 +1,18 @@
+@startuml Expert
+!include User.puml
+
+class Expert extends User {
+  - specialization: String
+  - hourlyRate: Number
+  - availableSessions: Session[]
+  - bookings: Session[]
+
+  + constructor(name, email, phone, specialization, hourlyRate)
+  + createSession(startTime, endTime, status, maxParticipants): Session
+  + cancelSession(session: Session): void
+  + bookSession(session: Session): void
+  + cancelBooking(session: Session): void
+  + getExpertInfo(): Object
+  + profile: String (getter)
+}
+@enduml

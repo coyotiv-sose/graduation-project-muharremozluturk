@@ -1,0 +1,11 @@
+@startuml User
+class User {
+  - name: String
+  - email: String
+  - phone: String
+  - createdAt: Date
+
+  + constructor(name, email, phone)
+  + getUserInfo(): Object
+}
+@enduml
