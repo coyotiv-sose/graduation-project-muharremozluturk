@@ -1,0 +1,15 @@
+@startuml SessionStateDiagram
+
+[*] --> Free : Session Created\n(createSession)
+Free --> Booked : Client books session\n(bookSession)
+Free --> Cancelled : Expert cancels session\n(cancelSession)
+
+Booked --> Free : All clients cancel\n(cancelBooking)
+Booked --> Completed : Session finishes\n(status = 'completed')
+Booked --> Cancelled : Expert cancels session\n(cancelSession)
+
+Completed --> [*]
+Cancelled --> [*]
+
+
+@enduml
