@@ -154,6 +154,75 @@ class Expert extends User {
     return session
   }
 
+  // Method to mark a session as completed
+  completeSession(session) {
+    if (!(session instanceof Session)) {
+      throw new Error('Invalid session')
+    }
+
+    if (session.expert !== this) {
+      throw new Error('Session does not belong to this expert')
+    }
+
+    session.markAsCompleted()
+    return session
+  }
+
+  // Method to add notes to a session
+  addSessionNotes(session, notes) {
+    if (!(session instanceof Session)) {
+      throw new Error('Invalid session')
+    }
+
+    if (session.expert !== this) {
+      throw new Error('Session does not belong to this expert')
+    }
+
+    session.addExpertNotes(notes)
+    return session
+  }
+
+  // Method to check and auto-complete all sessions that have passed their end time
+  checkAndCompleteSessions() {
+    const completedSessions = []
+    
+    // Check booked sessions
+    this.bookings.forEach(session => {
+      if (session.checkCompletionStatus()) {
+        completedSessions.push(session)
+      }
+    })
+
+    return completedSessions
+  }
+
+  // Method to get completed sessions
+  getCompletedSessions() {
+    return this.bookings.filter(session => session.status === 'completed')
+  }
+
+  // Method to get average rating across all completed sessions
+  getAverageRating() {
+    const completedSessions = this.getCompletedSessions()
+    if (completedSessions.length === 0) {
+      return null
+    }
+
+    const allRatings = []
+    completedSessions.forEach(session => {
+      session.reviews.forEach(review => {
+        allRatings.push(review.rating)
+      })
+    })
+
+    if (allRatings.length === 0) {
+      return null
+    }
+
+    const sum = allRatings.reduce((acc, rating) => acc + rating, 0)
+    return (sum / allRatings.length).toFixed(2)
+  }
+
   // Method to get expert info with sessions
   getExpertInfo() {
     return {
@@ -161,6 +230,8 @@ class Expert extends User {
       specialization: this.specialization,
       hourlyRate: this.hourlyRate,
       totalSessions: this.availableSessions.length + this.bookings.length,
+      completedSessions: this.getCompletedSessions().length,
+      averageRating: this.getAverageRating(),
     }
   }
 
@@ -171,6 +242,7 @@ class Expert extends User {
     Specialization: (${this.specialization}) - Rate: ${currency(this.hourlyRate).format()}/hr
     # Available Sessions: ${this.availableSessions.length}
     ${this.availableSessions.map(session => session.summary).join('\n    ')}
+    # Completed Sessions: ${this.getCompletedSessions().length}
     `
   }
 }
