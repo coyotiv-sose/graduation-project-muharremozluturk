@@ -1,0 +1,46 @@
+@startuml Booking System Use Cases
+
+left to right direction
+
+actor Expert as expert
+actor Client as client
+
+rectangle "Session Booking System" {
+  ' Expert Use Cases - Session Management
+  expert --> (Create Session)
+  expert --> (Cancel Session)
+  expert --> (Reschedule Session)
+  expert --> (Complete Session)
+  expert --> (Add Session Notes)
+  expert --> (Check and Complete Sessions)
+  
+  ' Expert Use Cases - Information
+  expert --> (View Expert Profile)
+  expert --> (View Expert Info)
+  expert --> (View Expert Average Rating)
+  expert --> (View Client Profile)
+  expert --> (View Client Info)
+  
+  ' Client Use Cases - Booking Management
+  client --> (Book Session)
+  client --> (Cancel Booking)
+  client --> (View Upcoming Bookings)
+  client --> (View Session History)
+  
+  ' Client Use Cases - Reviews
+  client --> (Leave Review)
+  
+  ' Client Use Cases - Information
+  client --> (View Client Profile)
+  client --> (View Client Info)
+  client --> (View Expert Profile)
+  client --> (View Expert Info)
+  client --> (View Expert Average Rating)
+  
+  ' Common Use Cases
+  expert --> (View Session Info)
+  client --> (View Session Info)
+}
+
+@enduml
+

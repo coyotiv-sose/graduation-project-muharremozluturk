@@ -1,5 +1,5 @@
 @startuml Client
-!include User.puml
+!include user_class.puml
 
 class Client extends User {
   - bookedSessions: Session[]
@@ -10,6 +10,7 @@ class Client extends User {
   + cancelBooking(session: Session): Session
   + getUpcomingBookings(): Session[]
   + getSessionHistory(): Session[]
+  + leaveReview(session: Session, rating: Number, comment: String): Object
   + getClientInfo(): Object
   + profile: String (getter)
 }
