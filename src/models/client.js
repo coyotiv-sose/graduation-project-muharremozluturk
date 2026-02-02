@@ -114,7 +114,7 @@ class Client extends User {
     `
   }
 
-  static createClient(name, email, phone) {
+  static create({name, email, phone}) {
     const client = new Client(name, email, phone)
     this.list.push(client)  // add to list
     return client

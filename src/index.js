@@ -846,3 +846,20 @@ axios.get('http://localhost:3000/clients').then(response => {
 }).catch(error => {
   console.error(error);
 });
+
+axios.post('http://localhost:3000/experts/561e6ad3dd/sessions', {
+  startTime: '2026-02-02T10:00:00',
+  endTime: '2026-02-02T11:00:00',
+  status: 'free',
+  maxParticipants: 1
+}).then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});
+
+axios.get('http://localhost:3000/experts/561e6ad3dd/sessions').then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});

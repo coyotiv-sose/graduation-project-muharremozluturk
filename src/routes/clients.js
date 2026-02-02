@@ -9,7 +9,7 @@ const clients = Client.list;
 });
 router.post('/', function(req, res, next) {
   const { name, email, phone } = req.body;
-  const client = Client.createClient(name, email, phone);
+  const client = Client.create({name, email, phone});
   res.send(client);
 });
 module.exports = router;

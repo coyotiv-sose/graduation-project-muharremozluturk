@@ -148,6 +148,15 @@ class Session {
       this.clients.length
     }/${this.maxParticipants})`
   }
+  static list = [];
+  static create({id, expert, startTime, endTime, status, maxParticipants}) {
+    const session = new Session(id, expert, startTime, endTime, status, maxParticipants);
+    this.list.push(session);
+    return session;
+  }
+  static getSession(id) {
+    return this.list.find(session => session.id === id);
+  }
 }
 
 module.exports = Session

@@ -8,7 +8,29 @@ router.get('/', function(req, res, next) {
 });
 router.post('/', function(req, res, next) {
   const { name, email, phone, specialization, hourlyRate } = req.body;
-  const expert = Expert.createExpert(name, email, phone, specialization, hourlyRate);
+  const expert = Expert.create({name, email, phone, specialization, hourlyRate});
   res.send(expert);
+});
+router.post('/:id/sessions', function(req, res, next) {
+  const { id } = req.params;
+  const expert = Expert.list.find(expert => expert.id === id);
+  if (!expert) {
+    return res.status(404).send({ error: 'Expert not found' });
+  }
+  const { startTime, endTime, status, maxParticipants } = req.body;
+  const session = expert.createSession(startTime, endTime, status, maxParticipants);
+
+
+  res.send({startTime: startTime, endTime: endTime, status: status, maxParticipants: maxParticipants});
+});
+
+router.get('/:id/sessions', function(req, res, next) {
+  const { id } = req.params;
+  const expert = Expert.list.find(expert => expert.id === id);
+  if (!expert) {
+    return res.status(404).send({ error: 'Expert not found' });
+  }
+  const sessions = expert.availableSessions.map(session => session.getSessionInfo());
+  res.send(sessions);
 });
 module.exports = router;

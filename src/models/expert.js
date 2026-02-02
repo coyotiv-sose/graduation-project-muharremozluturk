@@ -1,7 +1,7 @@
 const User = require('./user.js')
 const Session = require('./session.js')
 const currency = require('currency.js')
-
+const CryptoJS = require('crypto-js')
 class Expert extends User {
   constructor(name, email, phone, specialization, hourlyRate) {
     super(name, email, phone)
@@ -9,6 +9,7 @@ class Expert extends User {
     this.hourlyRate = hourlyRate
     this.availableSessions = []
     this.bookings = []
+    this.id = CryptoJS.SHA256(name + email + phone).toString().substring(0, 10)
   }
 
   // Method to add available time slot
@@ -29,14 +30,7 @@ class Expert extends User {
       throw new Error('Time slot conflicts with existing available time')
     }
 
-    const newSession = new Session(
-      Math.floor(Math.random() * 10000000) + 1000000,
-      this,
-      startTime,
-      endTime,
-      status,
-      maxParticipants
-    )
+    const newSession = Session.create({id: Math.floor(Math.random() * 10000000) + 1000000, expert: this, startTime, endTime, status, maxParticipants})
 
     this.availableSessions.push(newSession)
     return newSession
@@ -246,7 +240,7 @@ class Expert extends User {
     `
   }
 
-  static createExpert(name, email, phone, specialization, hourlyRate) {
+  static create({name, email, phone, specialization, hourlyRate}) {
     const expert = new Expert(name, email, phone, specialization, hourlyRate)
     this.list.push(expert)  // add to list
     return expert
