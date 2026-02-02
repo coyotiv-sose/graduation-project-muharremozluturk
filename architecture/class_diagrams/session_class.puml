@@ -8,11 +8,18 @@ class Session {
   - createdAt: Date
   - maxParticipants: Number
   - clients: Client[]
+  - expertNotes: String
+  - reviews: Object[]
 
   + constructor(id, expert, startTime, endTime, status, maxParticipants)
   + status: String (getter/setter)
   + getDuration(): Number
   + isFullyBooked(): Boolean
+  + checkCompletionStatus(): Boolean
+  + markAsCompleted(): void
+  + addExpertNotes(notes: String): void
+  + addReview(client: Client, rating: Number, comment: String): Object
+  + getAverageRating(): Number
   + getSessionInfo(): Object
   + summary: String (getter)
 }

@@ -1,5 +1,5 @@
 @startuml Expert
-!include User.puml
+!include user_class.puml
 
 class Expert extends User {
   - specialization: String
@@ -12,6 +12,12 @@ class Expert extends User {
   + cancelSession(session: Session): void
   + bookSession(session: Session): void
   + cancelBooking(session: Session): void
+  + rescheduleSession(session: Session, newStartTime: Date, newEndTime: Date): Session
+  + completeSession(session: Session): Session
+  + addSessionNotes(session: Session, notes: String): Session
+  + checkAndCompleteSessions(): Session[]
+  + getCompletedSessions(): Session[]
+  + getAverageRating(): Number
   + getExpertInfo(): Object
   + profile: String (getter)
 }
