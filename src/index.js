@@ -183,3 +183,270 @@ console.log(client1.profile)
 console.log(client2.profile)
 console.log(client3.profile)
 console.log(expert.profile)
+
+// ============================================
+// Tests for rescheduleSession function
+// ============================================
+console.log('\n\n=== RESCHEDULE SESSION TESTS ===\n')
+
+// Create a new expert for testing
+const testExpert = new Expert('Dr. Test Expert', 'test@example.com', '+1234567899', 'Testing', 150)
+const testClient = new Client('Test Client', 'testclient@example.com', '+1234567898')
+
+// Test 1: Successfully reschedule an available session
+console.log('Test 1: Reschedule an available session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 2)
+  testDate.setHours(10, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(11, 0, 0, 0)
+  
+  const availableSession = testExpert.createSession(testDate, testEnd, 'free', 1)
+  const originalStart = new Date(availableSession.startTime)
+  const originalEnd = new Date(availableSession.endTime)
+  
+  // Reschedule to 2 hours later
+  const newStart = new Date(testDate)
+  newStart.setHours(14, 0, 0, 0)
+  const newEnd = new Date(newStart)
+  newEnd.setHours(15, 0, 0, 0)
+  
+  const rescheduled = testExpert.rescheduleSession(availableSession, newStart, newEnd)
+  
+  console.log('✓ PASS: Session rescheduled successfully')
+  console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
+  console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 2: Successfully reschedule a booked session
+console.log('\nTest 2: Reschedule a booked session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 2)
+  testDate.setHours(16, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(17, 0, 0, 0)
+  
+  const bookedSession = testExpert.createSession(testDate, testEnd, 'free', 1)
+  testClient.bookSession(bookedSession)
+  
+  const originalStart = new Date(bookedSession.startTime)
+  const originalEnd = new Date(bookedSession.endTime)
+  
+  // Reschedule to 1 hour later
+  const newStart = new Date(testDate)
+  newStart.setHours(18, 0, 0, 0)
+  const newEnd = new Date(newStart)
+  newEnd.setHours(19, 0, 0, 0)
+  
+  const rescheduled = testExpert.rescheduleSession(bookedSession, newStart, newEnd)
+  
+  console.log('✓ PASS: Booked session rescheduled successfully')
+  console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
+  console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+  console.log(`  Status: ${rescheduled.status}`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 3: Error - Invalid session (not a Session instance)
+console.log('\nTest 3: Error when session is not a Session instance')
+try {
+  testExpert.rescheduleSession(null, new Date(), new Date())
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Invalid session') {
+    console.log('✓ PASS: Correctly rejected invalid session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 4: Error - Session doesn't belong to expert
+console.log('\nTest 4: Error when session belongs to different expert')
+try {
+  const otherExpert = new Expert('Other Expert', 'other@example.com', '+1234567897', 'Other', 200)
+  const otherDate = new Date()
+  otherDate.setDate(otherDate.getDate() + 2)
+  otherDate.setHours(20, 0, 0, 0)
+  
+  const otherEnd = new Date(otherDate)
+  otherEnd.setHours(21, 0, 0, 0)
+  
+  const otherSession = otherExpert.createSession(otherDate, otherEnd, 'free', 1)
+  testExpert.rescheduleSession(otherSession, new Date(), new Date())
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Session does not belong to this expert') {
+    console.log('✓ PASS: Correctly rejected session from different expert')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 5: Error - End time before/equal to start time
+console.log('\nTest 5: Error when end time is before or equal to start time')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 3)
+  testDate.setHours(10, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(11, 0, 0, 0)
+  
+  const session = testExpert.createSession(testDate, testEnd, 'free', 1)
+  
+  // Try to reschedule with end before start
+  const invalidStart = new Date(testDate)
+  invalidStart.setHours(12, 0, 0, 0)
+  const invalidEnd = new Date(testDate)
+  invalidEnd.setHours(11, 0, 0, 0) // Before start
+  
+  testExpert.rescheduleSession(session, invalidStart, invalidEnd)
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'End time must be after start time') {
+    console.log('✓ PASS: Correctly rejected invalid time range')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 6: Error - Session not found in expert's sessions
+console.log('\nTest 6: Error when session not found in expert sessions')
+try {
+  // Create a session but don't add it to expert (simulate missing session)
+  const Session = require('./session.js')
+  const fakeSession = new Session(999999, testExpert, new Date(), new Date(), 'free', 1)
+  // Manually remove it from arrays if it was added
+  testExpert.availableSessions = testExpert.availableSessions.filter(s => s.id !== fakeSession.id)
+  testExpert.bookings = testExpert.bookings.filter(s => s.id !== fakeSession.id)
+  
+  const newStart = new Date()
+  newStart.setDate(newStart.getDate() + 3)
+  newStart.setHours(10, 0, 0, 0)
+  const newEnd = new Date(newStart)
+  newEnd.setHours(11, 0, 0, 0)
+  
+  testExpert.rescheduleSession(fakeSession, newStart, newEnd)
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Session not found in expert sessions') {
+    console.log('✓ PASS: Correctly rejected session not in expert sessions')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 7: Error - Conflict with available session
+console.log('\nTest 7: Error when new time conflicts with available session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 3)
+  
+  // Create first session: 10:00 - 11:00
+  const session1Start = new Date(testDate)
+  session1Start.setHours(10, 0, 0, 0)
+  const session1End = new Date(session1Start)
+  session1End.setHours(11, 0, 0, 0)
+  const session1 = testExpert.createSession(session1Start, session1End, 'free', 1)
+  
+  // Create second session: 12:00 - 13:00
+  const session2Start = new Date(testDate)
+  session2Start.setHours(12, 0, 0, 0)
+  const session2End = new Date(session2Start)
+  session2End.setHours(13, 0, 0, 0)
+  const session2 = testExpert.createSession(session2Start, session2End, 'free', 1)
+  
+  // Try to reschedule session2 to conflict with session1 (10:30 - 11:30)
+  const conflictStart = new Date(testDate)
+  conflictStart.setHours(10, 30, 0, 0)
+  const conflictEnd = new Date(conflictStart)
+  conflictEnd.setHours(11, 30, 0, 0)
+  
+  testExpert.rescheduleSession(session2, conflictStart, conflictEnd)
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'New time slot conflicts with existing available session') {
+    console.log('✓ PASS: Correctly detected conflict with available session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 8: Error - Conflict with booked session
+console.log('\nTest 8: Error when new time conflicts with booked session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 4)
+  
+  // Create and book first session: 10:00 - 11:00
+  const booked1Start = new Date(testDate)
+  booked1Start.setHours(10, 0, 0, 0)
+  const booked1End = new Date(booked1Start)
+  booked1End.setHours(11, 0, 0, 0)
+  const bookedSession1 = testExpert.createSession(booked1Start, booked1End, 'free', 1)
+  testClient.bookSession(bookedSession1)
+  
+  // Create second session: 12:00 - 13:00
+  const session2Start = new Date(testDate)
+  session2Start.setHours(12, 0, 0, 0)
+  const session2End = new Date(session2Start)
+  session2End.setHours(13, 0, 0, 0)
+  const session2 = testExpert.createSession(session2Start, session2End, 'free', 1)
+  
+  // Try to reschedule session2 to conflict with bookedSession1 (10:30 - 11:30)
+  const conflictStart = new Date(testDate)
+  conflictStart.setHours(10, 30, 0, 0)
+  const conflictEnd = new Date(conflictStart)
+  conflictEnd.setHours(11, 30, 0, 0)
+  
+  testExpert.rescheduleSession(session2, conflictStart, conflictEnd)
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'New time slot conflicts with existing booked session') {
+    console.log('✓ PASS: Correctly detected conflict with booked session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 9: Success - Reschedule without conflicts (edge case: adjacent times)
+console.log('\nTest 9: Successfully reschedule to adjacent time (no conflict)')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 5)
+  
+  // Create first session: 10:00 - 11:00
+  const session1Start = new Date(testDate)
+  session1Start.setHours(10, 0, 0, 0)
+  const session1End = new Date(session1Start)
+  session1End.setHours(11, 0, 0, 0)
+  const session1 = testExpert.createSession(session1Start, session1End, 'free', 1)
+  
+  // Create second session: 12:00 - 13:00
+  const session2Start = new Date(testDate)
+  session2Start.setHours(12, 0, 0, 0)
+  const session2End = new Date(session2Start)
+  session2End.setHours(13, 0, 0, 0)
+  const session2 = testExpert.createSession(session2Start, session2End, 'free', 1)
+  
+  // Reschedule session2 to end exactly when session1 starts (11:00 - 12:00) - no conflict
+  const newStart = new Date(testDate)
+  newStart.setHours(11, 0, 0, 0)
+  const newEnd = new Date(testDate)
+  newEnd.setHours(12, 0, 0, 0)
+  
+  const rescheduled = testExpert.rescheduleSession(session2, newStart, newEnd)
+  console.log('✓ PASS: Successfully rescheduled to adjacent time (no conflict)')
+  console.log(`  New time: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+console.log('\n=== END OF RESCHEDULE SESSION TESTS ===\n')

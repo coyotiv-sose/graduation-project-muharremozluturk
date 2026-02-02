@@ -97,6 +97,63 @@ class Expert extends User {
     this.availableSessions.push(session)
   }
 
+  // Method to reschedule a session
+  rescheduleSession(session, newStartTime, newEndTime) {
+    if (!(session instanceof Session)) {
+      throw new Error('Invalid session')
+    }
+
+    // Check if session's expert is this expert
+    if (session.expert !== this) {
+      throw new Error('Session does not belong to this expert')
+    }
+
+    // Validate new time
+    const newStart = new Date(newStartTime)
+    const newEnd = new Date(newEndTime)
+
+    if (newEnd <= newStart) {
+      throw new Error('End time must be after start time')
+    }
+
+    // Check if session exists in expert's sessions (either booked or available)
+    const isBooked = session.status === 'booked';
+    const isAvailable = this.availableSessions.find(s => s.id === session.id)
+
+    if (!isBooked && !isAvailable) {
+      throw new Error('Session not found in expert sessions')
+    }
+
+    // Check for conflicts with other sessions (excluding the current session being rescheduled)
+    // Check conflicts with available sessions
+    const hasConflictWithAvailable = this.availableSessions.some(slot => {
+      if (slot.id === session.id) return false // Exclude current session
+      // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
+      return newStart < slot.endTime && newEnd > slot.startTime
+    })
+
+    if (hasConflictWithAvailable) {
+      throw new Error('New time slot conflicts with existing available session')
+    }
+
+    // Check conflicts with booked sessions
+    const hasConflictWithBooked = this.bookings.some(booking => {
+      if (booking.id === session.id) return false // Exclude current session
+      // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
+      return newStart < booking.endTime && newEnd > booking.startTime
+    })
+
+    if (hasConflictWithBooked) {
+      throw new Error('New time slot conflicts with existing booked session')
+    }
+
+    // Update session times
+    session.startTime = newStart
+    session.endTime = newEnd
+
+    return session
+  }
+
   // Method to get expert info with sessions
   getExpertInfo() {
     return {
