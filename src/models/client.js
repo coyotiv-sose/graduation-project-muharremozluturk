@@ -113,6 +113,14 @@ class Client extends User {
       ${this.cancelledSessions.map(session => session.summary).join('\n')}
     `
   }
+
+  static createClient(name, email, phone) {
+    const client = new Client(name, email, phone)
+    this.list.push(client)  // add to list
+    return client
+  }
+  static list = []
+
 }
 
 module.exports = Client

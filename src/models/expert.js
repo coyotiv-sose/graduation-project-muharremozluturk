@@ -245,6 +245,13 @@ class Expert extends User {
     # Completed Sessions: ${this.getCompletedSessions().length}
     `
   }
+
+  static createExpert(name, email, phone, specialization, hourlyRate) {
+    const expert = new Expert(name, email, phone, specialization, hourlyRate)
+    this.list.push(expert)  // add to list
+    return expert
+  }
+  static list = []
 }
 
 module.exports = Expert

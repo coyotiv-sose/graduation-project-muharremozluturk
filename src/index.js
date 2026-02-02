@@ -1,5 +1,5 @@
-const Expert = require('./expert.js')
-const Client = require('./client.js')
+const Expert = require('./models/expert.js')
+const Client = require('./models/client.js')
 
 // Create an expert
 const expert = new Expert('Dr. John Smith', 'john.smith@example.com', '+1234567890', 'Software Engineering', 100)
@@ -54,43 +54,43 @@ const cancelledBookingbyClient = expert.createSession(cancelledStart, cancelledE
 client1.bookSession(cancelledBookingbyClient)
 client1.cancelBooking(cancelledBookingbyClient)
 // Display information
-console.log('=== Expert Information ===')
-console.log(JSON.stringify(expert.getExpertInfo(), null, 2))
+//console.log('=== Expert Information ===')
+//console.log(JSON.stringify(expert.getExpertInfo(), null, 2))
 
-console.log('\n=== Client 1 Information ===')
-console.log(JSON.stringify(client1.getClientInfo(), null, 2))
+//console.log('\n=== Client 1 Information ===')
+//console.log(JSON.stringify(client1.getClientInfo(), null, 2))
 
-console.log('\n=== Client 2 Information ===')
-console.log(JSON.stringify(client2.getClientInfo(), null, 2))
+//console.log('\n=== Client 2 Information ===')
+//console.log(JSON.stringify(client2.getClientInfo(), null, 2))
 
-console.log('\n=== One-to-One Session Info ===')
-console.log(JSON.stringify(oneToOneSession.getSessionInfo(), null, 2))
+//console.log('\n=== One-to-One Session Info ===')
+//console.log(JSON.stringify(oneToOneSession.getSessionInfo(), null, 2))
 
-console.log('\n=== Group Session Info ===')
-console.log(JSON.stringify(groupSession.getSessionInfo(), null, 2))
+//console.log('\n=== Group Session Info ===')
+//console.log(JSON.stringify(groupSession.getSessionInfo(), null, 2))
 
-console.log('\n=== Expert Available Sessions ===')
+//console.log('\n=== Expert Available Sessions ===')
 expert.availableSessions.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
+  // )
 })
 
-console.log('\n=== Expert Booked Sessions ===')
+//console.log('\n=== Expert Booked Sessions ===')
 expert.bookings.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
+  // )
 })
 
-console.log('\n=== Client 1 Booked Sessions ===')
+//console.log('\n=== Client 1 Booked Sessions ===')
 client1.bookedSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log('\n=== Client 1 Cancelled Sessions ===')
+//console.log('\n=== Client 1 Cancelled Sessions ===')
 client1.cancelledSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
 const cancelledBookingbyExpert = expert.createSession(
@@ -101,39 +101,39 @@ const cancelledBookingbyExpert = expert.createSession(
 )
 
 client2.bookSession(cancelledBookingbyExpert)
-console.log('\n=== Client 2 Booked Sessions Before Cancellation ===')
+//console.log('\n=== Client 2 Booked Sessions Before Cancellation ===')
 client2.bookedSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log('\n=== Client 2 Cancelled Sessions Before Cancellation ===')
+//console.log('\n=== Client 2 Cancelled Sessions Before Cancellation ===')
 client2.cancelledSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 expert.cancelBooking(cancelledBookingbyExpert)
 
-console.log('\n=== Expert Available Sessions After Cancellation ===')
+//console.log('\n=== Expert Available Sessions After Cancellation ===')
 expert.availableSessions.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
+  // )
 })
 
-console.log('\n=== Expert Booked Sessions After Cancellation ===')
+//console.log('\n=== Expert Booked Sessions After Cancellation ===')
 expert.bookings.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
+  // )
 })
 
-console.log('\n=== Client 2 Booked Sessions After Cancellation ===')
+//console.log('\n=== Client 2 Booked Sessions After Cancellation ===')
 client2.bookedSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log('\n=== Client 2 Cancelled Sessions After Cancellation ===')
+//console.log('\n=== Client 2 Cancelled Sessions After Cancellation ===')
 client2.cancelledSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
 const cancelledSession = expert.createSession(
@@ -144,57 +144,57 @@ const cancelledSession = expert.createSession(
 )
 
 client3.bookSession(cancelledSession)
-console.log('\n=== Client 3 Booked Sessions Before Cancellation ===')
+//console.log('\n=== Client 3 Booked Sessions Before Cancellation ===')
 client3.bookedSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log('\n=== Client 3 Cancelled Sessions Before Cancellation ===')
+//console.log('\n=== Client 3 Cancelled Sessions Before Cancellation ===')
 client3.cancelledSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
 expert.cancelSession(cancelledSession)
-console.log('\n=== Expert Available Sessions After Cancellation ===')
+//console.log('\n=== Expert Available Sessions After Cancellation ===')
 expert.availableSessions.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status}, Max: ${session.maxParticipants}, Clients: ${session.clients.length})`
+  // )
 })
 
-console.log('\n=== Expert Booked Sessions After Cancellation ===')
+//console.log('\n=== Expert Booked Sessions After Cancellation ===')
 expert.bookings.forEach(session => {
-  console.log(
-    `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
-  )
+  //console.log(
+  //   `- Session ${session.id}: ${session.startTime} to ${session.endTime} (Clients: ${session.clients.length}/${session.maxParticipants})`
+  // )
 })
 
-console.log('\n=== Client 3 Booked Sessions After Cancellation ===')
+//console.log('\n=== Client 3 Booked Sessions After Cancellation ===')
 client3.bookedSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log('\n=== Client 3 Cancelled Sessions After Cancellation ===')
+//console.log('\n=== Client 3 Cancelled Sessions After Cancellation ===')
 client3.cancelledSessions.forEach(session => {
-  console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
+  //console.log(`- Session ${session.id}: ${session.startTime} to ${session.endTime} (Status: ${session.status})`)
 })
 
-console.log(client1.profile)
-console.log(client2.profile)
-console.log(client3.profile)
-console.log(expert.profile)
+//console.log(client1.profile)
+//console.log(client2.profile)
+//console.log(client3.profile)
+//console.log(expert.profile)
 
 // ============================================
 // Tests for rescheduleSession function
 // ============================================
-console.log('\n\n=== RESCHEDULE SESSION TESTS ===\n')
+//console.log('\n\n=== RESCHEDULE SESSION TESTS ===\n')
 
 // Create a new expert for testing
 const testExpert = new Expert('Dr. Test Expert', 'test@example.com', '+1234567899', 'Testing', 150)
 const testClient = new Client('Test Client', 'testclient@example.com', '+1234567898')
 
 // Test 1: Successfully reschedule an available session
-console.log('Test 1: Reschedule an available session')
+//console.log('Test 1: Reschedule an available session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 2)
@@ -215,15 +215,15 @@ try {
   
   const rescheduled = testExpert.rescheduleSession(availableSession, newStart, newEnd)
   
-  console.log('✓ PASS: Session rescheduled successfully')
-  console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
-  console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+  //console.log('✓ PASS: Session rescheduled successfully')
+  //console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
+  //console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 2: Successfully reschedule a booked session
-console.log('\nTest 2: Reschedule a booked session')
+//console.log('\nTest 2: Reschedule a booked session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 2)
@@ -246,29 +246,29 @@ try {
   
   const rescheduled = testExpert.rescheduleSession(bookedSession, newStart, newEnd)
   
-  console.log('✓ PASS: Booked session rescheduled successfully')
-  console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
-  console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
-  console.log(`  Status: ${rescheduled.status}`)
+  //console.log('✓ PASS: Booked session rescheduled successfully')
+  //console.log(`  Original: ${originalStart.toLocaleString()} - ${originalEnd.toLocaleString()}`)
+  //console.log(`  New: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+  //console.log(`  Status: ${rescheduled.status}`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 3: Error - Invalid session (not a Session instance)
-console.log('\nTest 3: Error when session is not a Session instance')
+//console.log('\nTest 3: Error when session is not a Session instance')
 try {
   testExpert.rescheduleSession(null, new Date(), new Date())
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Invalid session') {
-    console.log('✓ PASS: Correctly rejected invalid session')
+    //console.log('✓ PASS: Correctly rejected invalid session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 4: Error - Session doesn't belong to expert
-console.log('\nTest 4: Error when session belongs to different expert')
+//console.log('\nTest 4: Error when session belongs to different expert')
 try {
   const otherExpert = new Expert('Other Expert', 'other@example.com', '+1234567897', 'Other', 200)
   const otherDate = new Date()
@@ -280,17 +280,17 @@ try {
   
   const otherSession = otherExpert.createSession(otherDate, otherEnd, 'free', 1)
   testExpert.rescheduleSession(otherSession, new Date(), new Date())
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Session does not belong to this expert') {
-    console.log('✓ PASS: Correctly rejected session from different expert')
+    //console.log('✓ PASS: Correctly rejected session from different expert')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 5: Error - End time before/equal to start time
-console.log('\nTest 5: Error when end time is before or equal to start time')
+//console.log('\nTest 5: Error when end time is before or equal to start time')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 3)
@@ -308,20 +308,20 @@ try {
   invalidEnd.setHours(11, 0, 0, 0) // Before start
   
   testExpert.rescheduleSession(session, invalidStart, invalidEnd)
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'End time must be after start time') {
-    console.log('✓ PASS: Correctly rejected invalid time range')
+    //console.log('✓ PASS: Correctly rejected invalid time range')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 6: Error - Session not found in expert's sessions
-console.log('\nTest 6: Error when session not found in expert sessions')
+//console.log('\nTest 6: Error when session not found in expert sessions')
 try {
   // Create a session but don't add it to expert (simulate missing session)
-  const Session = require('./session.js')
+  const Session = require('./models/session.js')
   const fakeSession = new Session(999999, testExpert, new Date(), new Date(), 'free', 1)
   // Manually remove it from arrays if it was added
   testExpert.availableSessions = testExpert.availableSessions.filter(s => s.id !== fakeSession.id)
@@ -334,17 +334,17 @@ try {
   newEnd.setHours(11, 0, 0, 0)
   
   testExpert.rescheduleSession(fakeSession, newStart, newEnd)
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Session not found in expert sessions') {
-    console.log('✓ PASS: Correctly rejected session not in expert sessions')
+    //console.log('✓ PASS: Correctly rejected session not in expert sessions')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 7: Error - Conflict with available session
-console.log('\nTest 7: Error when new time conflicts with available session')
+//console.log('\nTest 7: Error when new time conflicts with available session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 3)
@@ -370,17 +370,17 @@ try {
   conflictEnd.setHours(11, 30, 0, 0)
   
   testExpert.rescheduleSession(session2, conflictStart, conflictEnd)
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'New time slot conflicts with existing available session') {
-    console.log('✓ PASS: Correctly detected conflict with available session')
+    //console.log('✓ PASS: Correctly detected conflict with available session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 8: Error - Conflict with booked session
-console.log('\nTest 8: Error when new time conflicts with booked session')
+//console.log('\nTest 8: Error when new time conflicts with booked session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 4)
@@ -407,17 +407,17 @@ try {
   conflictEnd.setHours(11, 30, 0, 0)
   
   testExpert.rescheduleSession(session2, conflictStart, conflictEnd)
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'New time slot conflicts with existing booked session') {
-    console.log('✓ PASS: Correctly detected conflict with booked session')
+    //console.log('✓ PASS: Correctly detected conflict with booked session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 9: Success - Reschedule without conflicts (edge case: adjacent times)
-console.log('\nTest 9: Successfully reschedule to adjacent time (no conflict)')
+//console.log('\nTest 9: Successfully reschedule to adjacent time (no conflict)')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 5)
@@ -443,18 +443,18 @@ try {
   newEnd.setHours(12, 0, 0, 0)
   
   const rescheduled = testExpert.rescheduleSession(session2, newStart, newEnd)
-  console.log('✓ PASS: Successfully rescheduled to adjacent time (no conflict)')
-  console.log(`  New time: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
+  //console.log('✓ PASS: Successfully rescheduled to adjacent time (no conflict)')
+  //console.log(`  New time: ${rescheduled.startTime.toLocaleString()} - ${rescheduled.endTime.toLocaleString()}`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
-console.log('\n=== END OF RESCHEDULE SESSION TESTS ===\n')
+//console.log('\n=== END OF RESCHEDULE SESSION TESTS ===\n')
 
 // ============================================
 // Tests for Session Completion Workflow
 // ============================================
-console.log('\n\n=== SESSION COMPLETION WORKFLOW TESTS ===\n')
+//console.log('\n\n=== SESSION COMPLETION WORKFLOW TESTS ===\n')
 
 // Create test expert and clients for completion tests
 const completionExpert = new Expert('Dr. Completion Expert', 'completion@example.com', '+1111111111', 'Completion Testing', 200)
@@ -462,7 +462,7 @@ const completionClient1 = new Client('Completion Client 1', 'cc1@example.com', '
 const completionClient2 = new Client('Completion Client 2', 'cc2@example.com', '+2222222223')
 
 // Test 1: Manually mark session as completed
-console.log('Test 1: Manually mark session as completed')
+//console.log('Test 1: Manually mark session as completed')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -474,16 +474,16 @@ try {
   const sessionToComplete = completionExpert.createSession(testDate, testEnd, 'free', 1)
   completionClient1.bookSession(sessionToComplete)
   
-  console.log(`  Before: Status = ${sessionToComplete.status}`)
+  //console.log(`  Before: Status = ${sessionToComplete.status}`)
   completionExpert.completeSession(sessionToComplete)
-  console.log(`  After: Status = ${sessionToComplete.status}`)
-  console.log('✓ PASS: Session marked as completed successfully')
+  //console.log(`  After: Status = ${sessionToComplete.status}`)
+  //console.log('✓ PASS: Session marked as completed successfully')
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 2: Error - Cannot complete free session
-console.log('\nTest 2: Error when trying to complete a free session')
+//console.log('\nTest 2: Error when trying to complete a free session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -494,17 +494,17 @@ try {
   
   const freeSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
   freeSession.markAsCompleted()
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Cannot complete a free (unbooked) session') {
-    console.log('✓ PASS: Correctly rejected completion of free session')
+    //console.log('✓ PASS: Correctly rejected completion of free session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 3: Error - Cannot complete cancelled session
-console.log('\nTest 3: Error when trying to complete a cancelled session')
+//console.log('\nTest 3: Error when trying to complete a cancelled session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -517,17 +517,17 @@ try {
   completionClient1.bookSession(cancelledSession)
   cancelledSession.status = 'cancelled'
   cancelledSession.markAsCompleted()
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Cannot complete a cancelled session') {
-    console.log('✓ PASS: Correctly rejected completion of cancelled session')
+    //console.log('✓ PASS: Correctly rejected completion of cancelled session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 4: Add expert notes to session
-console.log('\nTest 4: Add expert notes to a session')
+//console.log('\nTest 4: Add expert notes to a session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -543,14 +543,14 @@ try {
   const notes = 'Great session! Client showed excellent progress in understanding the concepts.'
   completionExpert.addSessionNotes(sessionWithNotes, notes)
   
-  console.log('✓ PASS: Expert notes added successfully')
-  console.log(`  Notes: "${sessionWithNotes.expertNotes}"`)
+  //console.log('✓ PASS: Expert notes added successfully')
+  //console.log(`  Notes: "${sessionWithNotes.expertNotes}"`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 5: Error - Add notes with invalid input
-console.log('\nTest 5: Error when adding empty notes')
+//console.log('\nTest 5: Error when adding empty notes')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -562,17 +562,17 @@ try {
   const session = completionExpert.createSession(testDate, testEnd, 'free', 1)
   completionClient1.bookSession(session)
   session.addExpertNotes('   ') // Empty/whitespace only
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Notes must be a non-empty string') {
-    console.log('✓ PASS: Correctly rejected empty notes')
+    //console.log('✓ PASS: Correctly rejected empty notes')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 6: Add review from client
-console.log('\nTest 6: Client leaves a review for completed session')
+//console.log('\nTest 6: Client leaves a review for completed session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -587,16 +587,16 @@ try {
   
   const review = completionClient1.leaveReview(reviewableSession, 5, 'Excellent session! Very helpful and informative.')
   
-  console.log('✓ PASS: Review added successfully')
-  console.log(`  Rating: ${review.rating}/5`)
-  console.log(`  Comment: "${review.comment}"`)
-  console.log(`  Average rating: ${reviewableSession.getAverageRating()}/5`)
+  //console.log('✓ PASS: Review added successfully')
+  //console.log(`  Rating: ${review.rating}/5`)
+  //console.log(`  Comment: "${review.comment}"`)
+  //console.log(`  Average rating: ${reviewableSession.getAverageRating()}/5`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 7: Error - Review before session is completed
-console.log('\nTest 7: Error when trying to review a non-completed session')
+//console.log('\nTest 7: Error when trying to review a non-completed session')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 1)
@@ -609,17 +609,17 @@ try {
   completionClient1.bookSession(incompleteSession)
   // Don't complete the session
   completionClient1.leaveReview(incompleteSession, 4, 'Good session')
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Reviews can only be added for completed sessions') {
-    console.log('✓ PASS: Correctly rejected review for incomplete session')
+    //console.log('✓ PASS: Correctly rejected review for incomplete session')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 8: Error - Invalid rating
-console.log('\nTest 8: Error when rating is out of range')
+//console.log('\nTest 8: Error when rating is out of range')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 2)
@@ -632,17 +632,17 @@ try {
   completionClient1.bookSession(session)
   completionExpert.completeSession(session)
   completionClient1.leaveReview(session, 6) // Invalid rating
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Rating must be an integer between 1 and 5') {
-    console.log('✓ PASS: Correctly rejected invalid rating')
+    //console.log('✓ PASS: Correctly rejected invalid rating')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 9: Multiple reviews and average rating
-console.log('\nTest 9: Multiple clients review the same session (group session)')
+//console.log('\nTest 9: Multiple clients review the same session (group session)')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 2)
@@ -660,19 +660,19 @@ try {
   completionClient2.leaveReview(groupSession, 4, 'Very good, learned a lot')
   
   const avgRating = groupSession.getAverageRating()
-  console.log('✓ PASS: Multiple reviews added successfully')
-  console.log(`  Total reviews: ${groupSession.reviews.length}`)
-  console.log(`  Average rating: ${avgRating}/5`)
-  console.log(`  Reviews:`)
+  //console.log('✓ PASS: Multiple reviews added successfully')
+  //console.log(`  Total reviews: ${groupSession.reviews.length}`)
+  //console.log(`  Average rating: ${avgRating}/5`)
+  //console.log(`  Reviews:`)
   groupSession.reviews.forEach((review, index) => {
-    console.log(`    ${index + 1}. ${review.clientName}: ${review.rating}/5 - "${review.comment}"`)
+    //console.log(`    ${index + 1}. ${review.clientName}: ${review.rating}/5 - "${review.comment}"`)
   })
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 10: Error - Duplicate review from same client
-console.log('\nTest 10: Error when client tries to review twice')
+//console.log('\nTest 10: Error when client tries to review twice')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 2)
@@ -687,17 +687,17 @@ try {
   
   completionClient1.leaveReview(session, 5, 'First review')
   completionClient1.leaveReview(session, 4, 'Second review') // Should fail
-  console.log('✗ FAIL: Should have thrown an error')
+  //console.log('✗ FAIL: Should have thrown an error')
 } catch (error) {
   if (error.message === 'Client has already reviewed this session') {
-    console.log('✓ PASS: Correctly prevented duplicate review')
+    //console.log('✓ PASS: Correctly prevented duplicate review')
   } else {
-    console.log('✗ FAIL: Wrong error message:', error.message)
+    //console.log('✗ FAIL: Wrong error message:', error.message)
   }
 }
 
 // Test 11: Automatic completion when endTime passes
-console.log('\nTest 11: Automatic completion when endTime passes')
+//console.log('\nTest 11: Automatic completion when endTime passes')
 try {
   // Create a session in the past
   const pastDate = new Date()
@@ -710,22 +710,22 @@ try {
   const pastSession = completionExpert.createSession(pastDate, pastEnd, 'free', 1)
   completionClient1.bookSession(pastSession)
   
-  console.log(`  Before check: Status = ${pastSession.status}`)
+  //console.log(`  Before check: Status = ${pastSession.status}`)
   const wasCompleted = pastSession.checkCompletionStatus()
-  console.log(`  After check: Status = ${pastSession.status}`)
-  console.log(`  Was auto-completed: ${wasCompleted}`)
+  //console.log(`  After check: Status = ${pastSession.status}`)
+  //console.log(`  Was auto-completed: ${wasCompleted}`)
   
   if (wasCompleted && pastSession.status === 'completed') {
-    console.log('✓ PASS: Session automatically completed')
+    //console.log('✓ PASS: Session automatically completed')
   } else {
-    console.log('✗ FAIL: Session was not auto-completed')
+    //console.log('✗ FAIL: Session was not auto-completed')
   }
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 12: Expert checks and completes all sessions
-console.log('\nTest 12: Expert checks and auto-completes all past sessions')
+//console.log('\nTest 12: Expert checks and auto-completes all past sessions')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() - 1)
@@ -745,22 +745,22 @@ try {
   const pastSession2 = completionExpert.createSession(session2Start, session2End, 'free', 1)
   completionClient2.bookSession(pastSession2)
   
-  console.log(`  Sessions before check: ${completionExpert.bookings.length}`)
+  //console.log(`  Sessions before check: ${completionExpert.bookings.length}`)
   const completed = completionExpert.checkAndCompleteSessions()
-  console.log(`  Auto-completed sessions: ${completed.length}`)
-  console.log(`  Completed sessions: ${completionExpert.getCompletedSessions().length}`)
+  //console.log(`  Auto-completed sessions: ${completed.length}`)
+  //console.log(`  Completed sessions: ${completionExpert.getCompletedSessions().length}`)
   
   if (completed.length >= 2) {
-    console.log('✓ PASS: Expert auto-completed past sessions')
+    //console.log('✓ PASS: Expert auto-completed past sessions')
   } else {
-    console.log('✗ FAIL: Not all sessions were auto-completed')
+    //console.log('✗ FAIL: Not all sessions were auto-completed')
   }
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 13: Expert average rating calculation
-console.log('\nTest 13: Expert average rating across all sessions')
+//console.log('\nTest 13: Expert average rating across all sessions')
 try {
   // Add reviews to previously completed sessions
   const completedSessions = completionExpert.getCompletedSessions()
@@ -779,15 +779,15 @@ try {
   }
   
   const avgRating = completionExpert.getAverageRating()
-  console.log('✓ PASS: Expert average rating calculated')
-  console.log(`  Average rating: ${avgRating ? avgRating + '/5' : 'No ratings yet'}`)
-  console.log(`  Total completed sessions: ${completionExpert.getCompletedSessions().length}`)
+  //console.log('✓ PASS: Expert average rating calculated')
+  //console.log(`  Average rating: ${avgRating ? avgRating + '/5' : 'No ratings yet'}`)
+  //console.log(`  Total completed sessions: ${completionExpert.getCompletedSessions().length}`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
 // Test 14: Get session info with all new fields
-console.log('\nTest 14: Get complete session info with notes and reviews')
+//console.log('\nTest 14: Get complete session info with notes and reviews')
 try {
   const testDate = new Date()
   testDate.setDate(testDate.getDate() + 3)
@@ -803,13 +803,46 @@ try {
   completionClient1.leaveReview(fullSession, 5, 'Perfect session!')
   
   const sessionInfo = fullSession.getSessionInfo()
-  console.log('✓ PASS: Complete session info retrieved')
-  console.log(`  Status: ${sessionInfo.status}`)
-  console.log(`  Expert notes: "${sessionInfo.expertNotes}"`)
-  console.log(`  Reviews: ${sessionInfo.reviews.length}`)
-  console.log(`  Average rating: ${sessionInfo.averageRating}/5`)
+  //console.log('✓ PASS: Complete session info retrieved')
+  //console.log(`  Status: ${sessionInfo.status}`)
+  //console.log(`  Expert notes: "${sessionInfo.expertNotes}"`)
+  //console.log(`  Reviews: ${sessionInfo.reviews.length}`)
+  //console.log(`  Average rating: ${sessionInfo.averageRating}/5`)
 } catch (error) {
-  console.log('✗ FAIL:', error.message)
+  //console.log('✗ FAIL:', error.message)
 }
 
-console.log('\n=== END OF SESSION COMPLETION WORKFLOW TESTS ===\n')
+//console.log('\n=== END OF SESSION COMPLETION WORKFLOW TESTS ===\n')
+const axios = require('axios');
+
+axios.post('http://localhost:3000/experts', {
+  name: 'Dr. Test Expert',
+  email: 'test@example.com',
+  phone: '+1234567899',
+  specialization: 'Testing',
+  hourlyRate: 150
+}).then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});
+
+axios.post('http://localhost:3000/clients', {
+  name: 'Test Client',
+  email: 'testclient@example.com',
+  phone: '+1234567898'
+}).then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});
+axios.get('http://localhost:3000/experts').then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});
+axios.get('http://localhost:3000/clients').then(response => {
+  console.log(response.data);
+}).catch(error => {
+  console.error(error);
+});
