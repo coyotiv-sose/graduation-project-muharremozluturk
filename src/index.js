@@ -813,53 +813,66 @@ try {
 }
 
 //console.log('\n=== END OF SESSION COMPLETION WORKFLOW TESTS ===\n')
+
+/* Tests with AXIOS */
 const axios = require('axios');
 
-axios.post('http://localhost:3000/experts', {
-  name: 'Dr. Test Expert',
-  email: 'test@example.com',
-  phone: '+1234567899',
-  specialization: 'Testing',
-  hourlyRate: 150
-}).then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
+async function runTests() {
+  try {
+    const postExpertResponse = await axios.post('http://localhost:3000/experts', {
+      name: 'Dr. Test Expert',
+      email: 'test@example.com',
+      phone: '+1234567899',
+      specialization: 'Testing',
+      hourlyRate: 150
+    });
+    console.log('POST /experts');
+    console.log(postExpertResponse.data);
 
-axios.post('http://localhost:3000/clients', {
-  name: 'Test Client',
-  email: 'testclient@example.com',
-  phone: '+1234567898'
-}).then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
-axios.get('http://localhost:3000/experts').then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
-axios.get('http://localhost:3000/clients').then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
+    const postClientResponse = await axios.post('http://localhost:3000/clients', {
+      name: 'Test Client',
+      email: 'testclient@example.com',
+      phone: '+1234567898'
+    });
+    console.log('POST /clients');
+    console.log(postClientResponse.data);
 
-axios.post('http://localhost:3000/experts/561e6ad3dd/sessions', {
-  startTime: '2026-02-02T10:00:00',
-  endTime: '2026-02-02T11:00:00',
-  status: 'free',
-  maxParticipants: 1
-}).then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
+    const getExpertsResponse = await axios.get('http://localhost:3000/experts');
+    console.log('GET /experts');
+    console.log(getExpertsResponse.data);
 
-axios.get('http://localhost:3000/experts/561e6ad3dd/sessions').then(response => {
-  console.log(response.data);
-}).catch(error => {
-  console.error(error);
-});
+    const getExpertWithIdResponse = await axios.get('http://localhost:3000/experts/561e6ad3dd');
+    console.log('GET /experts/:expertId');
+    console.log(getExpertWithIdResponse.data);
+
+    const getClientsResponse = await axios.get('http://localhost:3000/clients');
+    console.log('GET /clients');
+    console.log(getClientsResponse.data);
+
+    const getClientWithIdResponse = await axios.get('http://localhost:3000/clients/db6f68b3ff');
+    console.log('GET /clients/:clientId');
+    console.log(getClientWithIdResponse.data);
+
+    const postSessionResponse = await axios.post('http://localhost:3000/experts/561e6ad3dd/sessions', {
+      startTime: '2026-02-02T10:00:00',
+      endTime: '2026-02-02T11:00:00',
+      status: 'free',
+      maxParticipants: 1
+    });
+    console.log('POST /experts/:expertId/sessions');
+    console.log(postSessionResponse.data);
+
+    const getSessionsResponse = await axios.get('http://localhost:3000/experts/561e6ad3dd/sessions');
+    console.log('GET /experts/:expertId/sessions');
+    console.log(getSessionsResponse.data);
+
+    const postParticipantResponse = await axios.post('http://localhost:3000/clients/db6f68b3ff/sessions/8923d2fb26/participants');
+    console.log('POST /clients/:clientId/sessions/:sessionId/participants');
+    console.log(postParticipantResponse.data);
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
+runTests();
