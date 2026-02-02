@@ -1,11 +1,12 @@
 const User = require('./user.js')
 const Session = require('./session.js')
-
+const CryptoJS = require('crypto-js')
 class Client extends User {
   constructor(name, email, phone) {
     super(name, email, phone)
     this.bookedSessions = [] // Array to store booked sessions
     this.cancelledSessions = [] // Array to store cancelled sessions
+    this.id = CryptoJS.SHA256(name + email + phone).toString().substring(0, 10)
   }
 
   // Method to book a session

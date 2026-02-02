@@ -11,6 +11,15 @@ router.post('/', function(req, res, next) {
   const expert = Expert.create({name, email, phone, specialization, hourlyRate});
   res.send(expert);
 });
+
+router.get('/:id', function(req, res, next) {
+  const { id } = req.params;
+  const expert = Expert.list.find(expert => expert.id === id);
+  if (!expert) {
+    return res.status(404).send({ error: 'Expert not found' });
+  }
+  res.send(expert);
+});
 router.post('/:id/sessions', function(req, res, next) {
   const { id } = req.params;
   const expert = Expert.list.find(expert => expert.id === id);

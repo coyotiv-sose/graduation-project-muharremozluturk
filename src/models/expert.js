@@ -30,7 +30,7 @@ class Expert extends User {
       throw new Error('Time slot conflicts with existing available time')
     }
 
-    const newSession = Session.create({id: Math.floor(Math.random() * 10000000) + 1000000, expert: this, startTime, endTime, status, maxParticipants})
+    const newSession = Session.create({id: CryptoJS.SHA256(startTime + endTime + status + maxParticipants).toString().substring(0, 10), expert: this, startTime, endTime, status, maxParticipants})
 
     this.availableSessions.push(newSession)
     return newSession
