@@ -13,6 +13,8 @@ class Session {
     this.createdAt = new Date()
     this.maxParticipants = maxParticipants
     this.clients = [] // Array to store clients
+    this.expertNotes = null // Notes from expert about the session
+    this.reviews = [] // Array of reviews from clients
   }
   get status() {
     return this._status
@@ -37,6 +39,82 @@ class Session {
     return this.clients.length === this.maxParticipants
   }
 
+  // Method to check if session should be automatically completed
+  checkCompletionStatus() {
+    const now = new Date()
+    // Auto-complete if endTime has passed and session is still booked
+    if (this.status === 'booked' && now >= this.endTime) {
+      this.markAsCompleted()
+      return true
+    }
+    return false
+  }
+
+  // Method to mark session as completed
+  markAsCompleted() {
+    if (this.status === 'cancelled') {
+      throw new Error('Cannot complete a cancelled session')
+    }
+    if (this.status === 'completed') {
+      throw new Error('Session is already completed')
+    }
+    if (this.status === 'free') {
+      throw new Error('Cannot complete a free (unbooked) session')
+    }
+    
+    this.status = 'completed'
+  }
+
+  // Method to add expert notes
+  addExpertNotes(notes) {
+    if (typeof notes !== 'string' || notes.trim().length === 0) {
+      throw new Error('Notes must be a non-empty string')
+    }
+    this.expertNotes = notes.trim()
+  }
+
+  // Method to add a review from a client
+  addReview(client, rating, comment) {
+    if (!this.clients.includes(client)) {
+      throw new Error('Only clients who attended this session can leave a review')
+    }
+    
+    if (this.status !== 'completed') {
+      throw new Error('Reviews can only be added for completed sessions')
+    }
+
+    // Check if client already reviewed
+    const existingReview = this.reviews.find(r => r.client === client)
+    if (existingReview) {
+      throw new Error('Client has already reviewed this session')
+    }
+
+    // Validate rating (1-5 stars)
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new Error('Rating must be an integer between 1 and 5')
+    }
+
+    const review = {
+      client: client,
+      clientName: client.name,
+      rating: rating,
+      comment: comment ? comment.trim() : null,
+      reviewedAt: new Date(),
+    }
+
+    this.reviews.push(review)
+    return review
+  }
+
+  // Method to get average rating
+  getAverageRating() {
+    if (this.reviews.length === 0) {
+      return null
+    }
+    const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0)
+    return (sum / this.reviews.length).toFixed(2)
+  }
+
   // Method to get session info
   getSessionInfo() {
     return {
@@ -50,6 +128,14 @@ class Session {
       duration: this.getDuration(),
       isFullyBooked: this.isFullyBooked(),
       createdAt: this.createdAt,
+      expertNotes: this.expertNotes,
+      reviews: this.reviews.map(review => ({
+        clientName: review.clientName,
+        rating: review.rating,
+        comment: review.comment,
+        reviewedAt: review.reviewedAt,
+      })),
+      averageRating: this.getAverageRating(),
     }
   }
 

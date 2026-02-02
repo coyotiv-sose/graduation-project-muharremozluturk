@@ -450,3 +450,366 @@ try {
 }
 
 console.log('\n=== END OF RESCHEDULE SESSION TESTS ===\n')
+
+// ============================================
+// Tests for Session Completion Workflow
+// ============================================
+console.log('\n\n=== SESSION COMPLETION WORKFLOW TESTS ===\n')
+
+// Create test expert and clients for completion tests
+const completionExpert = new Expert('Dr. Completion Expert', 'completion@example.com', '+1111111111', 'Completion Testing', 200)
+const completionClient1 = new Client('Completion Client 1', 'cc1@example.com', '+2222222222')
+const completionClient2 = new Client('Completion Client 2', 'cc2@example.com', '+2222222223')
+
+// Test 1: Manually mark session as completed
+console.log('Test 1: Manually mark session as completed')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(10, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(11, 0, 0, 0)
+  
+  const sessionToComplete = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(sessionToComplete)
+  
+  console.log(`  Before: Status = ${sessionToComplete.status}`)
+  completionExpert.completeSession(sessionToComplete)
+  console.log(`  After: Status = ${sessionToComplete.status}`)
+  console.log('✓ PASS: Session marked as completed successfully')
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 2: Error - Cannot complete free session
+console.log('\nTest 2: Error when trying to complete a free session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(12, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(13, 0, 0, 0)
+  
+  const freeSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  freeSession.markAsCompleted()
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Cannot complete a free (unbooked) session') {
+    console.log('✓ PASS: Correctly rejected completion of free session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 3: Error - Cannot complete cancelled session
+console.log('\nTest 3: Error when trying to complete a cancelled session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(14, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(15, 0, 0, 0)
+  
+  const cancelledSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(cancelledSession)
+  cancelledSession.status = 'cancelled'
+  cancelledSession.markAsCompleted()
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Cannot complete a cancelled session') {
+    console.log('✓ PASS: Correctly rejected completion of cancelled session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 4: Add expert notes to session
+console.log('\nTest 4: Add expert notes to a session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(16, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(17, 0, 0, 0)
+  
+  const sessionWithNotes = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(sessionWithNotes)
+  completionExpert.completeSession(sessionWithNotes)
+  
+  const notes = 'Great session! Client showed excellent progress in understanding the concepts.'
+  completionExpert.addSessionNotes(sessionWithNotes, notes)
+  
+  console.log('✓ PASS: Expert notes added successfully')
+  console.log(`  Notes: "${sessionWithNotes.expertNotes}"`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 5: Error - Add notes with invalid input
+console.log('\nTest 5: Error when adding empty notes')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(18, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(19, 0, 0, 0)
+  
+  const session = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(session)
+  session.addExpertNotes('   ') // Empty/whitespace only
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Notes must be a non-empty string') {
+    console.log('✓ PASS: Correctly rejected empty notes')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 6: Add review from client
+console.log('\nTest 6: Client leaves a review for completed session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(20, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(21, 0, 0, 0)
+  
+  const reviewableSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(reviewableSession)
+  completionExpert.completeSession(reviewableSession)
+  
+  const review = completionClient1.leaveReview(reviewableSession, 5, 'Excellent session! Very helpful and informative.')
+  
+  console.log('✓ PASS: Review added successfully')
+  console.log(`  Rating: ${review.rating}/5`)
+  console.log(`  Comment: "${review.comment}"`)
+  console.log(`  Average rating: ${reviewableSession.getAverageRating()}/5`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 7: Error - Review before session is completed
+console.log('\nTest 7: Error when trying to review a non-completed session')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 1)
+  testDate.setHours(22, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(23, 0, 0, 0)
+  
+  const incompleteSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(incompleteSession)
+  // Don't complete the session
+  completionClient1.leaveReview(incompleteSession, 4, 'Good session')
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Reviews can only be added for completed sessions') {
+    console.log('✓ PASS: Correctly rejected review for incomplete session')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 8: Error - Invalid rating
+console.log('\nTest 8: Error when rating is out of range')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 2)
+  testDate.setHours(10, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(11, 0, 0, 0)
+  
+  const session = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(session)
+  completionExpert.completeSession(session)
+  completionClient1.leaveReview(session, 6) // Invalid rating
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Rating must be an integer between 1 and 5') {
+    console.log('✓ PASS: Correctly rejected invalid rating')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 9: Multiple reviews and average rating
+console.log('\nTest 9: Multiple clients review the same session (group session)')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 2)
+  testDate.setHours(14, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(16, 0, 0, 0)
+  
+  const groupSession = completionExpert.createSession(testDate, testEnd, 'free', 2)
+  completionClient1.bookSession(groupSession)
+  completionClient2.bookSession(groupSession)
+  completionExpert.completeSession(groupSession)
+  
+  completionClient1.leaveReview(groupSession, 5, 'Amazing session!')
+  completionClient2.leaveReview(groupSession, 4, 'Very good, learned a lot')
+  
+  const avgRating = groupSession.getAverageRating()
+  console.log('✓ PASS: Multiple reviews added successfully')
+  console.log(`  Total reviews: ${groupSession.reviews.length}`)
+  console.log(`  Average rating: ${avgRating}/5`)
+  console.log(`  Reviews:`)
+  groupSession.reviews.forEach((review, index) => {
+    console.log(`    ${index + 1}. ${review.clientName}: ${review.rating}/5 - "${review.comment}"`)
+  })
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 10: Error - Duplicate review from same client
+console.log('\nTest 10: Error when client tries to review twice')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 2)
+  testDate.setHours(18, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(19, 0, 0, 0)
+  
+  const session = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(session)
+  completionExpert.completeSession(session)
+  
+  completionClient1.leaveReview(session, 5, 'First review')
+  completionClient1.leaveReview(session, 4, 'Second review') // Should fail
+  console.log('✗ FAIL: Should have thrown an error')
+} catch (error) {
+  if (error.message === 'Client has already reviewed this session') {
+    console.log('✓ PASS: Correctly prevented duplicate review')
+  } else {
+    console.log('✗ FAIL: Wrong error message:', error.message)
+  }
+}
+
+// Test 11: Automatic completion when endTime passes
+console.log('\nTest 11: Automatic completion when endTime passes')
+try {
+  // Create a session in the past
+  const pastDate = new Date()
+  pastDate.setDate(pastDate.getDate() - 1) // Yesterday
+  pastDate.setHours(10, 0, 0, 0)
+  
+  const pastEnd = new Date(pastDate)
+  pastEnd.setHours(11, 0, 0, 0)
+  
+  const pastSession = completionExpert.createSession(pastDate, pastEnd, 'free', 1)
+  completionClient1.bookSession(pastSession)
+  
+  console.log(`  Before check: Status = ${pastSession.status}`)
+  const wasCompleted = pastSession.checkCompletionStatus()
+  console.log(`  After check: Status = ${pastSession.status}`)
+  console.log(`  Was auto-completed: ${wasCompleted}`)
+  
+  if (wasCompleted && pastSession.status === 'completed') {
+    console.log('✓ PASS: Session automatically completed')
+  } else {
+    console.log('✗ FAIL: Session was not auto-completed')
+  }
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 12: Expert checks and completes all sessions
+console.log('\nTest 12: Expert checks and auto-completes all past sessions')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() - 1)
+  
+  // Create multiple past sessions
+  const session1Start = new Date(testDate)
+  session1Start.setHours(9, 0, 0, 0)
+  const session1End = new Date(session1Start)
+  session1End.setHours(10, 0, 0, 0)
+  const pastSession1 = completionExpert.createSession(session1Start, session1End, 'free', 1)
+  completionClient1.bookSession(pastSession1)
+  
+  const session2Start = new Date(testDate)
+  session2Start.setHours(11, 0, 0, 0)
+  const session2End = new Date(session2Start)
+  session2End.setHours(12, 0, 0, 0)
+  const pastSession2 = completionExpert.createSession(session2Start, session2End, 'free', 1)
+  completionClient2.bookSession(pastSession2)
+  
+  console.log(`  Sessions before check: ${completionExpert.bookings.length}`)
+  const completed = completionExpert.checkAndCompleteSessions()
+  console.log(`  Auto-completed sessions: ${completed.length}`)
+  console.log(`  Completed sessions: ${completionExpert.getCompletedSessions().length}`)
+  
+  if (completed.length >= 2) {
+    console.log('✓ PASS: Expert auto-completed past sessions')
+  } else {
+    console.log('✗ FAIL: Not all sessions were auto-completed')
+  }
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 13: Expert average rating calculation
+console.log('\nTest 13: Expert average rating across all sessions')
+try {
+  // Add reviews to previously completed sessions
+  const completedSessions = completionExpert.getCompletedSessions()
+  if (completedSessions.length > 0) {
+    // Add reviews to first few completed sessions
+    completedSessions.slice(0, 2).forEach((session, index) => {
+      if (session.clients.length > 0 && session.reviews.length === 0) {
+        const client = session.clients[0]
+        try {
+          session.addReview(client, 4 + index, `Review ${index + 1}`)
+        } catch (e) {
+          // Review might already exist, skip
+        }
+      }
+    })
+  }
+  
+  const avgRating = completionExpert.getAverageRating()
+  console.log('✓ PASS: Expert average rating calculated')
+  console.log(`  Average rating: ${avgRating ? avgRating + '/5' : 'No ratings yet'}`)
+  console.log(`  Total completed sessions: ${completionExpert.getCompletedSessions().length}`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+// Test 14: Get session info with all new fields
+console.log('\nTest 14: Get complete session info with notes and reviews')
+try {
+  const testDate = new Date()
+  testDate.setDate(testDate.getDate() + 3)
+  testDate.setHours(10, 0, 0, 0)
+  
+  const testEnd = new Date(testDate)
+  testEnd.setHours(11, 0, 0, 0)
+  
+  const fullSession = completionExpert.createSession(testDate, testEnd, 'free', 1)
+  completionClient1.bookSession(fullSession)
+  completionExpert.completeSession(fullSession)
+  completionExpert.addSessionNotes(fullSession, 'Client made excellent progress')
+  completionClient1.leaveReview(fullSession, 5, 'Perfect session!')
+  
+  const sessionInfo = fullSession.getSessionInfo()
+  console.log('✓ PASS: Complete session info retrieved')
+  console.log(`  Status: ${sessionInfo.status}`)
+  console.log(`  Expert notes: "${sessionInfo.expertNotes}"`)
+  console.log(`  Reviews: ${sessionInfo.reviews.length}`)
+  console.log(`  Average rating: ${sessionInfo.averageRating}/5`)
+} catch (error) {
+  console.log('✗ FAIL:', error.message)
+}
+
+console.log('\n=== END OF SESSION COMPLETION WORKFLOW TESTS ===\n')

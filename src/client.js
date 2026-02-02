@@ -74,6 +74,23 @@ class Client extends User {
     return this.bookedSessions.filter(session => session.status === 'completed')
   }
 
+  // Method to leave a review for a completed session
+  leaveReview(session, rating, comment = null) {
+    if (!this.bookedSessions.includes(session)) {
+      throw new Error('You can only review sessions you have booked')
+    }
+    if(session.status !== 'completed') {
+      throw new Error('You can only review completed sessions')
+    }
+    if(!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new Error('Rating must be an integer between 1 and 10')
+    }
+    if(typeof comment !== 'string') {
+      throw new Error('Comment must be a string')
+    }
+    return session.addReview(this, rating, comment)
+  }
+
   // Method to get client info with bookings
   getClientInfo() {
     return {
