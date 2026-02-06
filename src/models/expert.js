@@ -1,5 +1,6 @@
 const User = require('./user.js')
 const Session = require('./session.js')
+const Client = require('./client.js')
 const currency = require('currency.js')
 const CryptoJS = require('crypto-js')
 class Expert extends User {
@@ -7,13 +8,12 @@ class Expert extends User {
     super(name, email, phone)
     this.specialization = specialization
     this.hourlyRate = hourlyRate
-    this.availableSessions = []
-    this.bookings = []
+    this.sessions = []
     this.id = CryptoJS.SHA256(name + email + phone).toString().substring(0, 10)
   }
 
   // Method to add available time slot
-  createSession(startTime, endTime, status = 'free', maxParticipants = 1) {
+  createSession(startTime, endTime, status = 'free') {
     const start = new Date(startTime)
     const end = new Date(endTime)
 
@@ -21,39 +21,54 @@ class Expert extends User {
       throw new Error('End time must be after start time')
     }
 
-    // Check for conflicts with existing available times
-    const hasConflict = this.availableSessions.some(slot => {
-      return start < slot.endTime && start > slot.startTime && end > slot.startTime && end < slot.endTime
+    // Check for conflicts with existing sessions (both free and booked, excluding cancelled)
+    const hasConflict = this.sessions.some(slot => {
+      if (slot.status === 'cancelled') return false
+      // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
+      return start < slot.endTime && end > slot.startTime
     })
 
     if (hasConflict) {
       throw new Error('Time slot conflicts with existing available time')
     }
 
-    const newSession = Session.create({id: CryptoJS.SHA256(startTime + endTime + status + maxParticipants).toString().substring(0, 10), expert: this, startTime, endTime, status, maxParticipants})
+    const newSession = Session.create({
+      id: CryptoJS.SHA256(startTime + endTime + status).toString().substring(0, 10),
+      expert: this,
+      startTime,
+      endTime,
+      status
+    })
 
-    this.availableSessions.push(newSession)
+    this.sessions.push(newSession)
     return newSession
   }
 
   // Method to remove available time slot
   cancelSession(session) {
-    this.availableSessions = this.availableSessions.filter(slot => slot.id !== session.id)
-    this.bookings = this.bookings.filter(booking => booking.id !== session.id)
+    if (!(session instanceof Session)) {
+      throw new Error('Invalid session')
+    }
+
+    if (session.expert !== this) {
+      throw new Error('Session does not belong to this expert')
+    }
+
+    if (!this.sessions.includes(session)) {
+      throw new Error('Session not found in expert sessions')
+    }
+
     session.status = 'cancelled'
-    session.clients.forEach(client => {
-      const index = client.bookedSessions.findIndex(s => s.id === session.id)
-      if (index !== -1) {
-        client.bookedSessions.splice(index, 1)
-      }
-      client.cancelledSessions.push(session)
-    })
     session.clients = []
   }
 
-  bookSession(session) {
+  bookSession(session, client) {
     if (!(session instanceof Session)) {
       throw new Error('Invalid session')
+    }
+
+    if (!(client instanceof Client)) {
+      throw new Error('Invalid Client')
     }
 
     // Check if session's expert is this expert
@@ -61,34 +76,35 @@ class Expert extends User {
       throw new Error('Session does not belong to this expert')
     }
 
-    // Check if session is already booked (in bookings array)
-    const alreadyBooked = this.bookings.find(s => s.id === session.id)
-
-    // If not already booked, check if it's in available sessions
-    if (!alreadyBooked) {
-      const foundSession = this.availableSessions.find(s => s.id === session.id)
-      if (foundSession === undefined) {
-        throw new Error('Session is not available for booking')
-      }
-      // Move from available to bookings on first booking
-      this.availableSessions = this.availableSessions.filter(s => s.id !== session.id)
-      this.bookings.push(session)
+    if (!this.sessions.includes(session)) {
+      throw new Error('Session not found in expert sessions')
     }
-    // If already booked, just allow the booking (for group sessions with multiple clients)
+
+    if (session.status !== 'free') {
+      throw new Error('Session is not available for booking')
+    }
+
+    // Mark session as booked; clients are managed by Client.bookSession
+    session.status = 'booked'
+    session.clients.push(client)
   }
 
   cancelBooking(session) {
-    this.bookings = this.bookings.filter(booking => booking.id !== session.id)
-    session.status = 'free'
-    session.clients.forEach(client => {
-      const index = client.bookedSessions.findIndex(s => s.id === session.id)
-      if (index !== -1) {
-        client.bookedSessions.splice(index, 1)
-      }
-      client.cancelledSessions.push(session)
-    })
+    if (!(session instanceof Session)) {
+      throw new Error('Invalid session')
+    }
+
+    if (session.expert !== this) {
+      throw new Error('Session does not belong to this expert')
+    }
+
+    if (!this.sessions.includes(session)) {
+      throw new Error('Session not found in expert sessions')
+    }
+
+    // Remove all clients from the session and mark it as free again
     session.clients = []
-    this.availableSessions.push(session)
+    session.status = 'free'
   }
 
   // Method to reschedule a session
@@ -110,35 +126,21 @@ class Expert extends User {
       throw new Error('End time must be after start time')
     }
 
-    // Check if session exists in expert's sessions (either booked or available)
-    const isBooked = session.status === 'booked';
-    const isAvailable = this.availableSessions.find(s => s.id === session.id)
-
-    if (!isBooked && !isAvailable) {
+    // Check if session exists in expert's sessions
+    if (!this.sessions.includes(session)) {
       throw new Error('Session not found in expert sessions')
     }
 
     // Check for conflicts with other sessions (excluding the current session being rescheduled)
-    // Check conflicts with available sessions
-    const hasConflictWithAvailable = this.availableSessions.some(slot => {
+    const hasConflict = this.sessions.some(slot => {
       if (slot.id === session.id) return false // Exclude current session
+      if (slot.status === 'cancelled') return false
       // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
       return newStart < slot.endTime && newEnd > slot.startTime
     })
 
-    if (hasConflictWithAvailable) {
-      throw new Error('New time slot conflicts with existing available session')
-    }
-
-    // Check conflicts with booked sessions
-    const hasConflictWithBooked = this.bookings.some(booking => {
-      if (booking.id === session.id) return false // Exclude current session
-      // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
-      return newStart < booking.endTime && newEnd > booking.startTime
-    })
-
-    if (hasConflictWithBooked) {
-      throw new Error('New time slot conflicts with existing booked session')
+    if (hasConflict) {
+      throw new Error('New time slot conflicts with existing session')
     }
 
     // Update session times
@@ -179,9 +181,9 @@ class Expert extends User {
   // Method to check and auto-complete all sessions that have passed their end time
   checkAndCompleteSessions() {
     const completedSessions = []
-    
-    // Check booked sessions
-    this.bookings.forEach(session => {
+
+    // Check sessions
+    this.sessions.forEach(session => {
       if (session.checkCompletionStatus()) {
         completedSessions.push(session)
       }
@@ -192,7 +194,7 @@ class Expert extends User {
 
   // Method to get completed sessions
   getCompletedSessions() {
-    return this.bookings.filter(session => session.status === 'completed')
+    return this.sessions.filter(session => session.status === 'completed')
   }
 
   // Method to get average rating across all completed sessions
@@ -223,7 +225,7 @@ class Expert extends User {
       ...this.getUserInfo(),
       specialization: this.specialization,
       hourlyRate: this.hourlyRate,
-      totalSessions: this.availableSessions.length + this.bookings.length,
+      totalSessions: this.sessions.length,
       completedSessions: this.getCompletedSessions().length,
       averageRating: this.getAverageRating(),
     }
@@ -234,8 +236,8 @@ class Expert extends User {
     # Expert: ${this.name}
     Mail: ${this.email} | Phone: ${this.phone}
     Specialization: (${this.specialization}) - Rate: ${currency(this.hourlyRate).format()}/hr
-    # Available Sessions: ${this.availableSessions.length}
-    ${this.availableSessions.map(session => session.summary).join('\n    ')}
+    # Available Sessions: ${this.sessions.filter(session => session.status === 'free').length}
+    ${this.sessions.filter(session => session.status === 'free').map(session => session.summary).join('\n    ')}
     # Completed Sessions: ${this.getCompletedSessions().length}
     `
   }

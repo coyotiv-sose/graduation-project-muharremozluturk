@@ -1,7 +1,7 @@
 const format = require('date-format')
 
 class Session {
-  constructor(id, expert, startTime, endTime, status = 'free', maxParticipants = 1) {
+  constructor(id, expert, startTime, endTime, status = 'free') {
     if (!expert) {
       throw new Error('Session must have an expert')
     }
@@ -11,7 +11,6 @@ class Session {
     this.endTime = new Date(endTime)
     this._status = status // 'booked', 'free', 'completed', 'cancelled'
     this.createdAt = new Date()
-    this.maxParticipants = maxParticipants
     this.clients = [] // Array to store clients
     this.expertNotes = null // Notes from expert about the session
     this.reviews = [] // Array of reviews from clients
@@ -32,11 +31,6 @@ class Session {
   // Method to get session duration in minutes
   getDuration() {
     return (this.endTime - this.startTime) / (1000 * 60)
-  }
-
-  // Method to check if session is active
-  isFullyBooked() {
-    return this.clients.length === this.maxParticipants
   }
 
   // Method to check if session should be automatically completed
@@ -121,12 +115,10 @@ class Session {
       id: this.id,
       expert: this.expert.getUserInfo(),
       clients: this.clients.map(client => client.getUserInfo()),
-      maxParticipants: this.maxParticipants,
       startTime: this.startTime,
       endTime: this.endTime,
       status: this.status,
       duration: this.getDuration(),
-      isFullyBooked: this.isFullyBooked(),
       createdAt: this.createdAt,
       expertNotes: this.expertNotes,
       reviews: this.reviews.map(review => ({
@@ -146,11 +138,11 @@ class Session {
       this.startTime
     )} to ${format.asString('dd.MM.yyyy hh:mm', this.endTime)} (Status: ${this.status}, Clients: ${
       this.clients.length
-    }/${this.maxParticipants})`
+    })`
   }
   static list = [];
-  static create({id, expert, startTime, endTime, status, maxParticipants}) {
-    const session = new Session(id, expert, startTime, endTime, status, maxParticipants);
+  static create({id, expert, startTime, endTime, status}) {
+    const session = new Session(id, expert, startTime, endTime, status);
     this.list.push(session);
     return session;
   }

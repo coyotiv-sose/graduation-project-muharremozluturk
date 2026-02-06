@@ -26,11 +26,11 @@ router.post('/:id/sessions', function(req, res, next) {
   if (!expert) {
     return res.status(404).send({ error: 'Expert not found' });
   }
-  const { startTime, endTime, status, maxParticipants } = req.body;
-  const session = expert.createSession(startTime, endTime, status, maxParticipants);
+  const { startTime, endTime, status } = req.body;
+  const session = expert.createSession(startTime, endTime, status);
 
 
-  res.send({startTime: startTime, endTime: endTime, status: status, maxParticipants: maxParticipants});
+  res.send({startTime: startTime, endTime: endTime, status: status});
 });
 
 router.get('/:id/sessions', function(req, res, next) {
@@ -39,7 +39,7 @@ router.get('/:id/sessions', function(req, res, next) {
   if (!expert) {
     return res.status(404).send({ error: 'Expert not found' });
   }
-  const sessions = expert.availableSessions.map(session => session.getSessionInfo());
+  const sessions = expert.sessions.map(session => session.getSessionInfo());
   res.send(sessions);
 });
 module.exports = router;
