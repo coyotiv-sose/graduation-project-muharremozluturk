@@ -6,39 +6,39 @@ const api = axios.create({
 
 async function runTests() {
   try {
-    // const postExpertResponse = await api.post('/experts', {
-    //   name: 'Dr. Test Expert',
-    //   email: 'test@example.com',
-    //   phone: '+1234567899',
-    //   specialization: 'Testing',
-    //   hourlyRate: 150
-    // });
-    // console.log('POST /experts');
-    // console.log(postExpertResponse.data);
-
-    const postClientResponse = await api.post('/clients', {
-      name: 'Test Client',
-      email: 'testclient@example.com',
-      phone: '+1234567898'
+    const postExpertResponse = await api.post('/experts', {
+      name: 'Dr. Test Expert',
+      email: 'test@example.com',
+      phone: '+1234567899',
+      specialization: 'Testing',
+      hourlyRate: 150
     });
-    console.log('POST /clients');
-    console.log(postClientResponse.data);
+    console.log('POST /experts');
+    console.log(postExpertResponse.data);
 
-    // const getExpertsResponse = await api.get('/experts');
-    // console.log('GET /experts');
-    // console.log(getExpertsResponse.data);
+    // const postClientResponse = await api.post('/clients', {
+    //   name: 'Test Client',
+    //   email: 'testclient@example.com',
+    //   phone: '+1234567898'
+    // });
+    // console.log('POST /clients');
+    // console.log(postClientResponse.data);
 
-    // const getExpertWithIdResponse = await api.get('/experts/561e6ad3dd');
-    // console.log('GET /experts/:expertId');
-    // console.log(getExpertWithIdResponse.data);
+    const getExpertsResponse = await api.get('/experts');
+    console.log('GET /experts');
+    console.log(getExpertsResponse.data);
 
-    const getClientsResponse = await api.get('/clients');
-    console.log('GET /clients');
-    console.log(getClientsResponse.data);
+    const getExpertWithIdResponse = await api.get(`/experts/${postExpertResponse.data._id}`);
+    console.log('GET /experts/:expertId');
+    console.log(getExpertWithIdResponse.data);
 
-    const getClientResponse = await api.get(`/clients/${postClientResponse.data._id}`);
-    console.log('GET /clients/:clientId');
-    console.log(getClientResponse.data);
+    // const getClientsResponse = await api.get('/clients');
+    // console.log('GET /clients');
+    // console.log(getClientsResponse.data);
+
+    // const getClientResponse = await api.get(`/clients/${postClientResponse.data._id}`);
+    // console.log('GET /clients/:clientId');
+    // console.log(getClientResponse.data);
 
     // const postSessionResponse = await api.post('/experts/561e6ad3dd/sessions', {
     //   startTime: '2026-02-02T10:00:00',

@@ -1,17 +1,28 @@
-const User = require('./user.js')
 const Session = require('./session.js')
 const Client = require('./client.js')
 const currency = require('currency.js')
 const CryptoJS = require('crypto-js')
-class Expert extends User {
-  constructor(name, email, phone, specialization, hourlyRate) {
-    super(name, email, phone)
-    this.specialization = specialization
-    this.hourlyRate = hourlyRate
-    this.sessions = []
-    this.id = CryptoJS.SHA256(name + email + phone).toString().substring(0, 10)
-  }
+const mongoose = require('mongoose')
+const autopopulate = require('mongoose-autopopulate')
 
+const expertSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+  specialization: String,
+  hourlyRate: Number,
+  sessions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Session',
+      autopopulate: {
+        maxDepth: 1,
+      },
+    },
+  ],
+})
+class Expert {
+  
   // Method to add available time slot
   createSession(startTime, endTime, status = 'free') {
     const start = new Date(startTime)
@@ -241,13 +252,9 @@ class Expert extends User {
     # Completed Sessions: ${this.getCompletedSessions().length}
     `
   }
-
-  static create({name, email, phone, specialization, hourlyRate}) {
-    const expert = new Expert(name, email, phone, specialization, hourlyRate)
-    this.list.push(expert)  // add to list
-    return expert
-  }
-  static list = []
+  
 }
 
-module.exports = Expert
+expertSchema.loadClass(Expert)
+
+module.exports = mongoose.model('Expert', expertSchema)
