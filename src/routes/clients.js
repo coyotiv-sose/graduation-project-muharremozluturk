@@ -19,7 +19,7 @@ router.get('/:id', async function(req, res, next) {
 
   if (!client) return res.status(404).send('Client not found')
 
-  return res.send(client)
+  res.send(client)
 });
 
 router.post('/:id/sessions/:sessionId/participants', function(req, res, next) {
