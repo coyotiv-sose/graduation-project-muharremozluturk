@@ -1,12 +1,17 @@
-const User = require('./user.js')
 const Session = require('./session.js')
 const CryptoJS = require('crypto-js')
-class Client extends User {
-  constructor(name, email, phone) {
-    super(name, email, phone)
-    this.id = CryptoJS.SHA256(name + email + phone).toString().substring(0, 10)
-  }
+const mongoose = require('mongoose')
+const autopopulate = require('mongoose-autopopulate')
 
+const clientSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+})
+clientSchema.plugin(autopopulate)
+
+class Client  {
+  
   // Method to book a session
   bookSession(session) {
     if (!(session instanceof Session)) {
@@ -108,14 +113,8 @@ class Client extends User {
       ${bookings.map(session => session.summary).join('\n  ')}
     `
   }
-
-  static create({name, email, phone}) {
-    const client = new Client(name, email, phone)
-    this.list.push(client)  // add to list
-    return client
-  }
-  static list = []
-
 }
 
-module.exports = Client
+clientSchema.loadClass(Client)
+
+module.exports = mongoose.model('Client', clientSchema)

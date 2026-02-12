@@ -1,38 +1,30 @@
 var express = require('express');
 var router = express.Router();
-var Client = require('../models/client.js');
-var Session = require('../models/session.js');
+const Client = require('../models/client.js');
+const Session = require('../models/session.js');
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-const clients = Client.list;
-  res.send(clients);
+
+router.get('/', async function(req, res, next) {
+  res.send(await Client.find())
 });
-router.post('/', function(req, res, next) {
+
+router.post('/', async function(req, res, next) {
   const { name, email, phone } = req.body;
-  const client = Client.create({name, email, phone});
-  res.send(client);
-});
-router.get('/:id', function(req, res, next) {
-  const { id } = req.params;
-  const client = Client.list.find(client => client.id === id);
-  if (!client) {
-    return res.status(404).send({ error: 'Client not found' });
-  }
+  const client = await Client.create({name, email, phone});
   res.send(client);
 });
 
+router.get('/:id', async function(req, res, next) {
+  const client = await Client.findById(req.params.id)
+
+  if (!client) return res.status(404).send('Client not found')
+
+  return res.send(client)
+});
+
 router.post('/:id/sessions/:sessionId/participants', function(req, res, next) {
-  const { id, sessionId } = req.params;
-  const client = Client.list.find(client => client.id === id);
-  if (!client) {
-    return res.status(404).send({ error: 'Client not found' });
-  }
-  const session = Session.list.find(session => session.id === sessionId);
-  if (!session) {
-    return res.status(404).send({ error: 'Session not found' });
-  }
-  const bookedSession = client.bookSession(session);
-  res.send({sessionId: sessionId});
+  //TODO
+  res.send("")
 });
 
 module.exports = router;
