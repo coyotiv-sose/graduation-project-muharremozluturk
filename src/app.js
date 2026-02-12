@@ -9,7 +9,8 @@ var usersRouter = require('./routes/users');
 var expertsRouter = require('./routes/experts');
 var clientsRouter = require('./routes/clients');
 var sessionsRouter = require('./routes/sessions');
-
+require('dotenv').config()
+require('./database-connection')
 var app = express();
 
 // view engine setup
