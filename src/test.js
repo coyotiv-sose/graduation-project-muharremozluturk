@@ -44,7 +44,7 @@ async function runTests() {
       startTime: new Date('2026-02-02T10:00:00'),
       endTime: new Date('2026-02-02T11:00:00'),
       availability: 'free',
-      expert: getExpertWithIdResponse.data,
+      expert: getExpertWithIdResponse.data._id,
     });
     console.log('POST /sessions');
     console.log(postSessionResponse.data);
@@ -58,21 +58,21 @@ async function runTests() {
     console.log(getSessionResponse.data);
 
     const bookSessionResponse = await api.post(`/sessions/${postSessionResponse.data._id}/client`, {
-      client: postClientResponse.data
+      client: postClientResponse.data._id
     })
     console.log('POST /sessions/:sessionId/client');
     console.log(bookSessionResponse.data);
 
-    // const cancelBookingResponse = await api.delete(`/sessions/${postSessionResponse.data._id}/client`, {
-    //   data: {
-    //     client: postClientResponse.data
-    //   }})
-    // console.log('DELETE /sessions/:sessionId/client');
-    // console.log(cancelBookingResponse.data);
+    const cancelBookingResponse = await api.delete(`/sessions/${postSessionResponse.data._id}/client`, {
+      data: {
+        client: postClientResponse.data._id
+      }})
+    console.log('DELETE /sessions/:sessionId/client');
+    console.log(cancelBookingResponse.data);
 
     const cancelSessionResponse = await api.delete(`/sessions/${postSessionResponse.data._id}`, {
       data: {
-        expert: getExpertWithIdResponse.data
+        expert: getExpertWithIdResponse.data._id
       }})
     console.log('DELETE /sessions/:sessionId');
     console.log(cancelSessionResponse.data);

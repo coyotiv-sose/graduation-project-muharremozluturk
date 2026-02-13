@@ -1,4 +1,3 @@
-const format = require('date-format')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 
@@ -22,7 +21,7 @@ const sessionSchema = new mongoose.Schema({
     },
   },
 })
-
+sessionSchema.plugin(autopopulate)
 class Session {
   // Method to get session duration in minutes
   getDuration() {

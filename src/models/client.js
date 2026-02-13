@@ -1,5 +1,4 @@
 const Session = require('./session.js')
-const CryptoJS = require('crypto-js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 

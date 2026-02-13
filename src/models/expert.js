@@ -1,7 +1,5 @@
 const Session = require('./session.js')
 const Client = require('./client.js')
-const currency = require('currency.js')
-const CryptoJS = require('crypto-js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 
@@ -21,6 +19,8 @@ const expertSchema = new mongoose.Schema({
     },
   ],
 })
+
+expertSchema.plugin(autopopulate)
 class Expert {
 
   // Method to add available time slot
