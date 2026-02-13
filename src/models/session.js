@@ -1,20 +1,30 @@
 const format = require('date-format')
+const mongoose = require('mongoose')
+const autopopulate = require('mongoose-autopopulate')
+
+const sessionSchema = new mongoose.Schema({
+  startTime: Date,
+  endTime: Date,
+  availability: String,
+  client:
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client',
+      autopopulate: {
+        maxDepth: 0,
+      },
+    },
+  expert: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Expert',
+    autopopulate: {
+      maxDepth: 0,
+    },
+  },
+})
 
 class Session {
-  constructor(id, expert, startTime, endTime, status = 'free') {
-    if (!expert) {
-      throw new Error('Session must have an expert')
-    }
-    this.id = id
-    this.expert = expert
-    this.startTime = new Date(startTime)
-    this.endTime = new Date(endTime)
-    this._status = status // 'booked', 'free', 'completed', 'cancelled'
-    this.createdAt = new Date()
-    this.clients = [] // Array to store clients
-    this.expertNotes = null // Notes from expert about the session
-    this.reviews = [] // Array of reviews from clients
-  }
+
   get status() {
     return this._status
   }
@@ -131,24 +141,20 @@ class Session {
     }
   }
 
-  get summary() {
-    console.log()
-    return `-Session ${this.id} with Expert ${this.expert.name} from ${format.asString(
-      'dd.MM.yyyy hh:mm',
-      this.startTime
-    )} to ${format.asString('dd.MM.yyyy hh:mm', this.endTime)} (Status: ${this.status}, Clients: ${
-      this.clients.length
-    })`
-  }
-  static list = [];
-  static create({id, expert, startTime, endTime, status}) {
-    const session = new Session(id, expert, startTime, endTime, status);
-    this.list.push(session);
-    return session;
-  }
+  // get summary() {
+  //   console.log()
+  //   return `-Session ${this.id} with Expert ${this.expert.name} from ${format.asString(
+  //     'dd.MM.yyyy hh:mm',
+  //     this.startTime
+  //   )} to ${format.asString('dd.MM.yyyy hh:mm', this.endTime)} (Status: ${this.status}, Clients: ${
+  //     this.clients.length
+  //   })`
+  // }
+
   static getSession(id) {
     return this.list.find(session => session.id === id);
   }
 }
 
-module.exports = Session
+sessionSchema.loadClass(Session)
+module.exports = mongoose.model('Session', sessionSchema)

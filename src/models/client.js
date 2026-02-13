@@ -10,52 +10,30 @@ const clientSchema = new mongoose.Schema({
 })
 clientSchema.plugin(autopopulate)
 
-class Client  {
-  
+class Client {
+
   // Method to book a session
-  bookSession(session) {
-    if (!(session instanceof Session)) {
-      throw new Error('Invalid session')
+  async bookSession(session) {
+    if (session.availability === "free") {
+      session.client = this
+      session.availability = "booked"
+      await session.save()
     }
-
-    // Check if client already booked this session
-    if (session.clients.includes(this)) {
-      throw new Error('Session already booked by this client')
+    else {
+      throw new Error('Session is not bookable.')
     }
-
-    // Check if session is available for booking
-    if (session.status !== 'free') {
-      throw new Error('Session is not available for booking')
-    }
-
-    // Book session with expert (marks it as booked on expert side)
-    session.expert.bookSession(session, this)
-
-    return session
   }
 
   // Method to cancel a booking
-  cancelBooking(session) {
-    if (!(session instanceof Session)) {
-      throw new Error('Invalid session')
+  async cancelBooking(session) {
+    if (session.availability === 'booked') {
+      session.availability = "free"
+      session.client = undefined
+      await session.save()
     }
-
-    if (!session.clients.includes(this)) {
-      throw new Error('Session not found in client bookings')
+    else {
+      throw new Error('Session is not booked.')
     }
-
-    // Remove client from session
-    const clientIndex = session.clients.findIndex(c => c === this)
-    if (clientIndex !== -1) {
-      session.clients.splice(clientIndex, 1)
-    }
-
-    // If no clients remain, notify expert to free the session
-    if (session.clients.length === 0) {
-      session.expert.cancelBooking(session)
-    }
-
-    return session
   }
 
   // Method to get upcoming bookings
@@ -78,13 +56,13 @@ class Client  {
     if (!session.clients.includes(this)) {
       throw new Error('You can only review sessions you have booked')
     }
-    if(session.status !== 'completed') {
+    if (session.status !== 'completed') {
       throw new Error('You can only review completed sessions')
     }
-    if(!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       throw new Error('Rating must be an integer between 1 and 5')
     }
-    if(typeof comment !== 'string') {
+    if (typeof comment !== 'string') {
       throw new Error('Comment must be a string')
     }
     return session.addReview(this, rating, comment)

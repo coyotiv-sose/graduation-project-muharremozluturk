@@ -22,55 +22,38 @@ const expertSchema = new mongoose.Schema({
   ],
 })
 class Expert {
-  
-  // Method to add available time slot
-  createSession(startTime, endTime, status = 'free') {
-    const start = new Date(startTime)
-    const end = new Date(endTime)
 
-    if (end <= start) {
+  // Method to add available time slot
+  async createSession(startTime, endTime, availability = 'free') {
+
+    if (startTime >= endTime) {
       throw new Error('End time must be after start time')
     }
 
-    // Check for conflicts with existing sessions (both free and booked, excluding cancelled)
-    const hasConflict = this.sessions.some(slot => {
-      if (slot.status === 'cancelled') return false
-      // Two time ranges overlap if: newStart < existingEnd AND newEnd > existingStart
-      return start < slot.endTime && end > slot.startTime
-    })
-
-    if (hasConflict) {
-      throw new Error('Time slot conflicts with existing available time')
-    }
-
-    const newSession = Session.create({
-      id: CryptoJS.SHA256(startTime + endTime + status).toString().substring(0, 10),
-      expert: this,
+    //TODO: Check for conflicts with existing sessions (both free and booked, excluding cancelled)
+    const session = await Session.create({
+      expert: this._id,
       startTime,
       endTime,
-      status
+      availability
     })
-
-    this.sessions.push(newSession)
-    return newSession
+    this.sessions.push(session._id)
+    await this.save()
+    return session
   }
 
   // Method to remove available time slot
-  cancelSession(session) {
-    if (!(session instanceof Session)) {
-      throw new Error('Invalid session')
+  async cancelSession(session) {
+    if (session.availability !== 'cancelled') {
+      session.availability = 'cancelled'
+      session.client = undefined
+      this.sessions.pull(session._id)
+      await this.save()
+      await session.save()
     }
-
-    if (session.expert !== this) {
-      throw new Error('Session does not belong to this expert')
+    else {
+      throw new Error('Session is cancelled')
     }
-
-    if (!this.sessions.includes(session)) {
-      throw new Error('Session not found in expert sessions')
-    }
-
-    session.status = 'cancelled'
-    session.clients = []
   }
 
   bookSession(session, client) {
@@ -252,7 +235,7 @@ class Expert {
     # Completed Sessions: ${this.getCompletedSessions().length}
     `
   }
-  
+
 }
 
 expertSchema.loadClass(Expert)
