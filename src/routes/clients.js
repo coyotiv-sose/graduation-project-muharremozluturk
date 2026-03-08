@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const Client = require('../models/client.js');
 const Session = require('../models/session.js');
+const mongoose = require('mongoose');
 /* GET users listing. */
 
 router.get('/', async function(req, res, next) {
@@ -15,16 +16,19 @@ router.post('/', async function(req, res, next) {
 });
 
 router.get('/:id', async function(req, res, next) {
-  const client = await Client.findById(req.params.id)
+  const { id } = req.params;
 
-  if (!client) return res.status(404).send('Client not found')
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json('Client not found');
+  }
 
-  res.send(client)
+  const client = await Client.findById(id);
+
+  if (!client) return res.status(404).json('Client not found');
+
+  res.send(client);
 });
 
-router.post('/:id/sessions/:sessionId/participants', function(req, res, next) {
-  //TODO
-  res.send("")
-});
+
 
 module.exports = router;

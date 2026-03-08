@@ -3,6 +3,7 @@ var router = express.Router();
 const Session = require('../models/session.js');
 const Expert = require('../models/expert.js')
 const Client = require('../models/client.js')
+const mongoose = require('mongoose');
 
 /* GET session listing. */
 router.get('/', async function (req, res, next) {
@@ -11,9 +12,14 @@ router.get('/', async function (req, res, next) {
 
 /* Get session*/
 router.get('/:sessionId', async function (req, res, next) {
-  const session = await Session.findById(req.params.sessionId)
+  const { sessionId } = req.params;
 
-  if (!session) return res.status(404).send('Session not found')
+  if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+    return res.status(404).json('Session not found');
+  }
+  const session = await Session.findById(sessionId)
+
+  if (!session) return res.status(404).json('Session not found')
 
   res.send(session)
 });
@@ -30,9 +36,12 @@ router.post('/', async function (req, res, next) {
 router.post('/:sessionId/client', async function (req, res, next) {
   const client = await Client.findById(req.body.client)
   const session = await Session.findById(req.params.sessionId)
-
-  await client.bookSession(session)
-  res.send(session);
+  try {
+    await client.bookSession(session)
+    res.send(session);
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
 })
 
 /* Cancel Booking */
@@ -40,9 +49,12 @@ router.post('/:sessionId/client', async function (req, res, next) {
 router.delete('/:sessionId/client', async function (req, res, next) {
   const client = await Client.findById(req.body.client)
   const session = await Session.findById(req.params.sessionId)
-
-  await client.cancelBooking(session)
-  res.send(session);
+  try { 
+    await client.cancelBooking(session)
+    res.send(session);
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
 })
 
 /* Cancel Session */
@@ -50,9 +62,12 @@ router.delete('/:sessionId/client', async function (req, res, next) {
 router.delete('/:sessionId', async function (req, res, next) {
   const expert = await Expert.findById(req.body.expert)
   const session = await Session.findById(req.params.sessionId)
-
-  await expert.cancelSession(session)
-  res.send(session);
+  try {
+    await expert.cancelSession(session)
+    res.send(session);
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
 })
 
 module.exports = router;

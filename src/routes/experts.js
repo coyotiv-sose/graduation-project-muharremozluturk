@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var Expert = require('../models/expert.js');
+var mongoose = require('mongoose');
 
 /* GET users listing. */
 router.get('/', async function(req, res, next) {
@@ -14,11 +15,17 @@ router.post('/', async function(req, res, next) {
 });
 
 router.get('/:id', async function(req, res, next) {
-  const expert = await Expert.findById(req.params.id)
+  const { id } = req.params;
 
-  if (!expert) return res.status(404).send('Expert not found')
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json('Expert not found');
+  }
 
-  res.send(expert)
+  const expert = await Expert.findById(id);
+
+  if (!expert) return res.status(404).json('Expert not found');
+
+  res.send(expert);
 });
 
 // router.post('/:id/sessions', function(req, res, next) {

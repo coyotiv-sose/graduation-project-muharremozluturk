@@ -22,12 +22,5 @@ const sessionSchema = new mongoose.Schema({
   },
 })
 sessionSchema.plugin(autopopulate)
-class Session {
-  // Method to get session duration in minutes
-  getDuration() {
-    return (this.endTime - this.startTime) / (1000 * 60)
-  }
-}
 
-sessionSchema.loadClass(Session)
 module.exports = mongoose.model('Session', sessionSchema)

@@ -13,9 +13,7 @@ const expertSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Session',
-      autopopulate: {
-        maxDepth: 1,
-      },
+      autopopulate: false,
     },
   ],
 })
