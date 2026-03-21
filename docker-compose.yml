@@ -16,7 +16,7 @@ services:
       # - MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/expertplace
 
   frontend:
-    image: picnigram-frontend
+    image: expertplace-frontend
     build:
       context: frontend
       dockerfile: Dockerfile
