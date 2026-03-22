@@ -28,6 +28,7 @@
 		"axios": "^1.13.4",
 		"connect-mongo": "^6.0.0",
 		"cookie-parser": "^1.4.7",
+		"cors": "^2.8.6",
 		"debug": "^4.4.3",
 		"dotenv": "^17.2.4",
 		"express": "^5.2.1",
