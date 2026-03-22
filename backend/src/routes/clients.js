@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 const Client = require('../models/client.js');
-const Session = require('../models/session.js');
 const mongoose = require('mongoose');
 /* GET users listing. */
 
@@ -10,9 +9,9 @@ router.get('/', async function(req, res, next) {
 });
 
 router.post('/', async function(req, res, next) {
-  const { name, email, phone } = req.body;
-  const client = await Client.create({name, email, phone});
-  res.send(client);
+  const { name, email, phone, password } = req.body
+  const client = await Client.register({ name, email, phone }, password)
+  res.send(client);  
 });
 
 router.get('/:id', async function(req, res, next) {

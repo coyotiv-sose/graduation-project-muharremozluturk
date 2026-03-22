@@ -1,7 +1,7 @@
-const Session = require('./session.js')
-const Client = require('./client.js')
+const Appointment = require('./appointment.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
+const passportLocalMongoose = require('passport-local-mongoose').default
 
 const expertSchema = new mongoose.Schema({
   name: String,
@@ -9,55 +9,56 @@ const expertSchema = new mongoose.Schema({
   phone: String,
   specialization: String,
   hourlyRate: Number,
-  sessions: [
+  appointments: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Session',
+      ref: 'Appointment',
       autopopulate: false,
     },
   ],
 })
 
 expertSchema.plugin(autopopulate)
+expertSchema.plugin(passportLocalMongoose, { usernameField: 'email' })
 class Expert {
 
   // Method to add available time slot
-  async createSession(startTime, endTime, availability = 'free') {
+  async createAppointment(startTime, endTime, availability = 'free') {
 
     if (startTime >= endTime) {
       throw new Error('End time must be after start time')
     }
 
-    //TODO: Check for conflicts with existing sessions (both free and booked, excluding cancelled)
-    const session = await Session.create({
+    //TODO: Check for conflicts with existing appointments (both free and booked, excluding cancelled)
+    const appointment = await Appointment.create({
       expert: this._id,
       startTime,
       endTime,
       availability
     })
-    this.sessions.push(session._id)
+    this.appointments.push(appointment._id)
     await this.save()
-    return session
+    return appointment
   }
 
   // Method to remove available time slot
-  async cancelSession(session) {
-    if (session.availability !== 'cancelled') {
-      session.availability = 'cancelled'
-      session.client = undefined
-      this.sessions.pull(session._id)
+  async cancelAppointment(appointment) {
+    if (appointment.availability !== 'cancelled') {
+      appointment.availability = 'cancelled'
+      appointment.client = undefined
+      this.appointments.pull(appointment._id)
       await this.save()
-      await session.save()
+      await appointment.save()
     }
     else {
-      throw new Error('Session is cancelled')
+      throw new Error('Appointment is cancelled')
     }
   }
 
   /*TODO:
-  Reschedule a session 
-  complete Session
-  add session notes
+  Reschedule an appointment 
+  complete appointment
+  add appointment notes
   profile
   update hourly rate
   get expert info*/

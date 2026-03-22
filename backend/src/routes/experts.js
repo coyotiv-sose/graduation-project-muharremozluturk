@@ -9,8 +9,8 @@ router.get('/', async function(req, res, next) {
 });
 
 router.post('/', async function(req, res, next) {
-  const { name, email, phone, specialization, hourlyRate } = req.body;
-  const expert = await Expert.create({name, email, phone, specialization, hourlyRate});
+  const { name, email, phone, specialization, hourlyRate, password } = req.body;
+  const expert = await Expert.register({name, email, phone, specialization, hourlyRate}, password);
   res.send(expert);
 });
 
@@ -28,26 +28,26 @@ router.get('/:id', async function(req, res, next) {
   res.send(expert);
 });
 
-// router.post('/:id/sessions', function(req, res, next) {
+// router.post('/:id/appointments', function(req, res, next) {
 //   const { id } = req.params;
 //   const expert = Expert.list.find(expert => expert.id === id);
 //   if (!expert) {
 //     return res.status(404).send({ error: 'Expert not found' });
 //   }
 //   const { startTime, endTime, status } = req.body;
-//   const session = expert.createSession(startTime, endTime, status);
+//   const appointment = expert.createAppointment(startTime, endTime, status);
 
 
 //   res.send({startTime: startTime, endTime: endTime, status: status});
 // });
 
-// router.get('/:id/sessions', function(req, res, next) {
+// router.get('/:id/appointments', function(req, res, next) {
 //   const { id } = req.params;
 //   const expert = Expert.list.find(expert => expert.id === id);
 //   if (!expert) {
 //     return res.status(404).send({ error: 'Expert not found' });
 //   }
-//   const sessions = expert.sessions.map(session => session.getSessionInfo());
-//   res.send(sessions);
+//   const appointments = expert.appointments.map((appointment) => appointment);
+//   res.send(appointments);
 // });
 module.exports = router;

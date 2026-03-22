@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 
-const sessionSchema = new mongoose.Schema({
+const appointmentSchema = new mongoose.Schema({
   startTime: Date,
   endTime: Date,
   availability: String,
@@ -21,6 +21,6 @@ const sessionSchema = new mongoose.Schema({
     },
   },
 })
-sessionSchema.plugin(autopopulate)
+appointmentSchema.plugin(autopopulate)
 
-module.exports = mongoose.model('Session', sessionSchema)
+module.exports = mongoose.model('Appointment', appointmentSchema)

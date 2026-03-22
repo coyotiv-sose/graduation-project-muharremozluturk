@@ -1,6 +1,8 @@
-const Session = require('./session.js')
+const Appointment = require('./appointment.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
+const passportLocalMongoose = require('passport-local-mongoose').default
+
 
 const clientSchema = new mongoose.Schema({
   name: String,
@@ -8,30 +10,31 @@ const clientSchema = new mongoose.Schema({
   phone: String,
 })
 clientSchema.plugin(autopopulate)
+clientSchema.plugin(passportLocalMongoose, { usernameField: 'email' })
 
 class Client {
 
-  // Method to book a session
-  async bookSession(session) {
-    if (session.availability === "free") {
-      session.client = this
-      session.availability = "booked"
-      await session.save()
+  // Method to book an appointment
+  async bookAppointment(appointment) {
+    if (appointment.availability === "free") {
+      appointment.client = this
+      appointment.availability = "booked"
+      await appointment.save()
     }
     else {
-      throw new Error('Session is not bookable.')
+      throw new Error('Appointment is not bookable.')
     }
   }
 
   // Method to cancel a booking
-  async cancelBooking(session) {
-    if (session.availability === 'booked') {
-      session.availability = "free"
-      session.client = undefined
-      await session.save()
+  async cancelBooking(appointment) {
+    if (appointment.availability === 'booked') {
+      appointment.availability = "free"
+      appointment.client = undefined
+      await appointment.save()
     }
     else {
-      throw new Error('Session is not booked.')
+      throw new Error('Appointment is not booked.')
     }
   }
 
