@@ -1,6 +1,34 @@
-<script setup>
+<script>
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+
+import { useAccountStore } from './stores/account'
+import { mapActions, mapState } from 'pinia'
+
+export default {
+  name: 'App',
+  components: {
+    HelloWorld,
+    RouterLink,
+    RouterView
+  },
+  async mounted() {
+    await this.fetchUser()
+  },
+  methods: {
+    ...mapActions(useAccountStore, ['fetchUser', 'logout']),
+    loginTabActiveClass(role) {
+      if (this.$route.name !== 'login') {
+        return {}
+      }
+      const q = this.$route.query.role || 'client'
+      return { 'login-tab--active': q === role }
+    },
+  },
+  computed: {
+    ...mapState(useAccountStore, ['user'])
+  }
+}
 </script>
 
 <template>
@@ -10,9 +38,30 @@ import HelloWorld from './components/HelloWorld.vue'
     <div class="wrapper">
       <HelloWorld msg="You did it!" />
 
-      <nav>
+      <nav class="main-nav">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
+        <div v-if="!user" class="login-tabs" role="tablist" aria-label="Login as">
+          <RouterLink
+            class="login-tab"
+            :class="loginTabActiveClass('client')"
+            :to="{ name: 'login', query: { role: 'client' } }"
+          >
+            Client login
+          </RouterLink>
+          <RouterLink
+            class="login-tab"
+            :class="loginTabActiveClass('expert')"
+            :to="{ name: 'login', query: { role: 'expert' } }"
+          >
+            Expert login
+          </RouterLink>
+        </div>
+        <div v-else class="user-strip">
+          <span class="user-email">{{ user.email }}</span>
+          <span class="user-role">{{ user.role }}</span>
+          <button type="button" class="logout-btn" @click="logout">Log out</button>
+        </div>
       </nav>
     </div>
   </header>
@@ -31,29 +80,107 @@ header {
   margin: 0 auto 2rem;
 }
 
-nav {
+.main-nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
   margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 0;
 }
 
-nav a.router-link-exact-active {
+.main-nav > a.router-link-exact-active {
   color: var(--color-text);
 }
 
-nav a.router-link-exact-active:hover {
+.main-nav > a.router-link-exact-active:hover {
   background-color: transparent;
 }
 
-nav a {
+.main-nav > a {
   display: inline-block;
   padding: 0 1rem;
   border-left: 1px solid var(--color-border);
 }
 
-nav a:first-of-type {
+.main-nav > a:first-of-type {
   border: 0;
+}
+
+.login-tabs {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-left: 0.5rem;
+}
+
+.login-tab {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+  text-decoration: none;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-background);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.login-tab:first-child {
+  border-left: none;
+}
+
+.login-tab:hover {
+  background: var(--color-background-mute);
+}
+
+.login-tab.login-tab--active {
+  background: var(--vt-c-indigo);
+  color: var(--vt-c-white);
+}
+
+.user-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-left: 0.5rem;
+  font-size: 12px;
+}
+
+.user-email {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  text-transform: capitalize;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-border);
+}
+
+.logout-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: var(--color-background-mute);
 }
 
 @media (min-width: 1024px) {
@@ -73,13 +200,26 @@ nav a:first-of-type {
     flex-wrap: wrap;
   }
 
-  nav {
+  .main-nav {
     text-align: left;
     margin-left: -1rem;
     font-size: 1rem;
-
+    justify-content: flex-start;
     padding: 1rem 0;
     margin-top: 1rem;
+  }
+
+  .login-tab {
+    font-size: 0.9rem;
+    padding: 0.45rem 1rem;
+  }
+
+  .user-strip {
+    font-size: 0.9rem;
+  }
+
+  .logout-btn {
+    font-size: 0.9rem;
   }
 }
 </style>
