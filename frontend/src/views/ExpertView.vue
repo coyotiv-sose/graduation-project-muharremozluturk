@@ -1,5 +1,7 @@
 <script>
 import http from '@/api/http'
+import { useAccountStore } from '@/stores/account'
+import { mapState } from 'pinia'
 
 export default {
   name: 'ExpertView',
@@ -19,12 +21,27 @@ export default {
       },
     },
   },
+  computed: {
+    ...mapState(useAccountStore, ['user']),
+  },
   methods: {
     expertIdFromAppointment(appointment) {
       const e = appointment?.expert
       if (e == null) return ''
       if (typeof e === 'object') return String(e._id ?? e)
       return String(e)
+    },
+    clientIdFromAppointment(appointment) {
+      const c = appointment?.client
+      if (c == null) return ''
+      if (typeof c === 'object') return String(c._id ?? c)
+      return String(c)
+    },
+    isClientsOwnBookedAppointment(appt) {
+      if (!this.user || this.user.role !== 'client') return false
+      if (appt.availability !== 'booked') return false
+      const sessionId = String(this.user._id ?? '')
+      return sessionId !== '' && this.clientIdFromAppointment(appt) === sessionId
     },
     async loadExpert() {
       const id = this.$route.params.id
@@ -122,9 +139,17 @@ export default {
               <span class="appts-sep">→</span>
               <span>{{ formatDateTime(appt.endTime) }}</span>
             </div>
-            <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
-              {{ statusLabel(appt.availability) }}
-            </span>
+            <div class="appts-tags">
+              <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
+                {{ statusLabel(appt.availability) }}
+              </span>
+              <span
+                v-if="isClientsOwnBookedAppointment(appt)"
+                class="appts-yours"
+              >
+                Your appointment
+              </span>
+            </div>
           </li>
         </ul>
       </section>
@@ -278,6 +303,33 @@ dd a {
 
 .appts-sep {
   opacity: 0.5;
+}
+
+.appts-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.appts-yours {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  background: hsla(210, 60%, 45%, 0.12);
+  color: hsl(210, 55%, 35%);
+  border: 1px solid hsla(210, 50%, 45%, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  .appts-yours {
+    background: hsla(210, 45%, 55%, 0.2);
+    color: hsl(210, 70%, 78%);
+    border-color: hsla(210, 45%, 50%, 0.45);
+  }
 }
 
 .appts-status {

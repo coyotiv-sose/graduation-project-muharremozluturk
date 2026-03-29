@@ -419,8 +419,14 @@ describe('App', () => {
 
         const responseClient = await request(app).post('/clients').send(clientBody);
 
-        const response = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: emailClient,
+            password: TEST_PASSWORD,
+        });
+
+        const response = await agent.post(`/appointments/${appointmentId}/client`).send({
+            client: responseClient.body._id,
         });
 
         const expectedOutput = {
@@ -428,12 +434,73 @@ describe('App', () => {
             endTime,
             availability: 'booked',
             client: {
-                _id: responseClient.body._id
-            }
+                _id: responseClient.body._id,
+            },
         };
         expect(response.status).toBe(200);
         expect(response.body).toMatchObject(expectedOutput);
         expect(response.body._id).toBe(appointmentId);
+    });
+
+    it('GET /appointments omits client for bookings that are not the session client', async () => {
+        const expertBody = {
+            name: 'Dr. Privacy Expert',
+            email: 'privacy-expert@example.com',
+            phone: '+1999000111',
+            specialization: 'Privacy',
+            hourlyRate: 100,
+            password: TEST_PASSWORD,
+        };
+        const responseExpert = await request(app).post('/experts').send(expertBody);
+
+        const startTime = new Date('2026-03-01T10:00:00').toISOString();
+        const endTime = new Date('2026-03-01T11:00:00').toISOString();
+
+        const responseAppointment = await request(app)
+            .post('/appointments')
+            .send({
+                startTime,
+                endTime,
+                availability: 'free',
+                expert: responseExpert.body._id,
+            });
+
+        const clientABody = {
+            name: 'Client A',
+            email: 'client-a@example.com',
+            phone: '+1999000222',
+            password: TEST_PASSWORD,
+        };
+        const clientBBody = {
+            name: 'Client B',
+            email: 'client-b@example.com',
+            phone: '+1999000333',
+            password: TEST_PASSWORD,
+        };
+        const responseClientA = await request(app).post('/clients').send(clientABody);
+        const responseClientB = await request(app).post('/clients').send(clientBBody);
+
+        const agentA = request.agent(app);
+        await agentA.post('/accounts/session?role=client').send({
+            email: clientABody.email,
+            password: TEST_PASSWORD,
+        });
+        await agentA.post(`/appointments/${responseAppointment.body._id}/client`).send({
+            client: responseClientA.body._id,
+        });
+
+        const agentB = request.agent(app);
+        await agentB.post('/accounts/session?role=client').send({
+            email: clientBBody.email,
+            password: TEST_PASSWORD,
+        });
+
+        const list = await agentB.get('/appointments');
+        expect(list.status).toBe(200);
+        const booked = list.body.find((a) => a._id === responseAppointment.body._id);
+        expect(booked).toBeDefined();
+        expect(booked.availability).toBe('booked');
+        expect(booked.client).toBeUndefined();
     });
 
     it('should send an error when booking an appointment if it is already booked', async () => {
