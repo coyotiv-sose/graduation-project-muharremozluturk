@@ -1,6 +1,5 @@
 <script>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 
 import { useAccountStore } from './stores/account'
 import { mapActions, mapState } from 'pinia'
@@ -8,9 +7,8 @@ import { mapActions, mapState } from 'pinia'
 export default {
   name: 'App',
   components: {
-    HelloWorld,
     RouterLink,
-    RouterView
+    RouterView,
   },
   async mounted() {
     await this.fetchUser()
@@ -26,21 +24,16 @@ export default {
     },
   },
   computed: {
-    ...mapState(useAccountStore, ['user'])
-  }
+    ...mapState(useAccountStore, ['user']),
+  },
 }
 </script>
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
     <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
       <nav class="main-nav">
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+        <RouterLink class="nav-home" :to="{ name: 'home' }">Home</RouterLink>
         <div v-if="!user" class="login-tabs" role="tablist" aria-label="Login as">
           <RouterLink
             class="login-tab"
@@ -72,19 +65,13 @@ export default {
 <style scoped>
 header {
   line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
 }
 
 .main-nav {
   width: 100%;
   font-size: 12px;
   text-align: center;
-  margin-top: 2rem;
+  margin-top: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -92,22 +79,26 @@ header {
   gap: 0.75rem 0;
 }
 
-.main-nav > a.router-link-exact-active {
+.nav-home {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  margin-right: 0.5rem;
+  font-weight: 500;
+  color: var(--color-heading);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.nav-home:hover {
+  background: var(--color-background-mute);
+}
+
+.main-nav > a.router-link-exact-active:not(.nav-home) {
   color: var(--color-text);
 }
 
-.main-nav > a.router-link-exact-active:hover {
+.main-nav > a.router-link-exact-active:not(.nav-home):hover {
   background-color: transparent;
-}
-
-.main-nav > a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-.main-nav > a:first-of-type {
-  border: 0;
 }
 
 .login-tabs {
@@ -115,7 +106,6 @@ header {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
-  margin-left: 0.5rem;
 }
 
 .login-tab {
@@ -149,7 +139,6 @@ header {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  margin-left: 0.5rem;
   font-size: 12px;
 }
 
@@ -184,29 +173,11 @@ header {
 }
 
 @media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
   .main-nav {
     text-align: left;
-    margin-left: -1rem;
     font-size: 1rem;
     justify-content: flex-start;
     padding: 1rem 0;
-    margin-top: 1rem;
   }
 
   .login-tab {
