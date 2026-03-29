@@ -425,9 +425,7 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const response = await agent.post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id,
-        });
+        const response = await agent.post(`/appointments/${appointmentId}/client`).send({});
 
         const expectedOutput = {
             startTime,
@@ -485,9 +483,7 @@ describe('App', () => {
             email: clientABody.email,
             password: TEST_PASSWORD,
         });
-        await agentA.post(`/appointments/${responseAppointment.body._id}/client`).send({
-            client: responseClientA.body._id,
-        });
+        await agentA.post(`/appointments/${responseAppointment.body._id}/client`).send({});
 
         const agentB = request.agent(app);
         await agentB.post('/accounts/session?role=client').send({
@@ -513,10 +509,6 @@ describe('App', () => {
         const nameClient = 'Test Client';
         const emailClient = 'testclient@example.com';
         const phoneClient = '+1234567898';
-
-        const nameClient2 = 'Test Client 2';
-        const emailClient2 = 'testclient2@example.com';
-        const phoneClient2 = '+1234567823';
 
         const expertBody = {
             name: nameExpert,
@@ -549,27 +541,22 @@ describe('App', () => {
             password: TEST_PASSWORD,
         };
 
-        const clientBody2 = {
-            name: nameClient2,
-            email: emailClient2,
-            phone: phoneClient2,
+        await request(app).post('/clients').send(clientBody);
+
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: emailClient,
             password: TEST_PASSWORD,
-        };
-
-        const responseClient = await request(app).post('/clients').send(clientBody);
-
-        const responseBooking = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
         });
 
-        const response = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
-        });
-        
+        await agent.post(`/appointments/${appointmentId}/client`).send({});
+
+        const response = await agent.post(`/appointments/${appointmentId}/client`).send({});
+
         expect(response.status).toBe(400);
         expect(response.body).toBe('Appointment is not bookable.');
     });
-    
+
     it('should cancel a booking of an appointment', async () => {
         const nameExpert = 'Dr. Test Expert';
         const emailExpert = 'test@example.com';
@@ -614,13 +601,15 @@ describe('App', () => {
 
         const responseClient = await request(app).post('/clients').send(clientBody);
 
-        const responseBooking = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: emailClient,
+            password: TEST_PASSWORD,
         });
 
-        const response = await request(app).delete(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
-        });
+        await agent.post(`/appointments/${appointmentId}/client`).send({});
+
+        const response = await agent.delete(`/appointments/${appointmentId}/client`);
 
         const expectedOutput = {
             startTime,
@@ -633,6 +622,58 @@ describe('App', () => {
         expect(response.status).toBe(200);
         expect(response.body).toMatchObject(expectedOutput);
         expect(response.body._id).toBe(appointmentId);
+    });
+
+    it('should reject cancel booking when the session client is not the booker', async () => {
+        const expertBody = {
+            name: 'Dr. Cancel Guard Expert',
+            email: 'cancel-guard-expert@example.com',
+            phone: '+1999000444',
+            specialization: 'Testing',
+            hourlyRate: 120,
+            password: TEST_PASSWORD,
+        };
+        const responseExpert = await request(app).post('/experts').send(expertBody);
+
+        const startTime = new Date('2026-04-01T10:00:00').toISOString();
+        const endTime = new Date('2026-04-01T11:00:00').toISOString();
+
+        const responseAppointment = await request(app).post('/appointments').send({
+            startTime,
+            endTime,
+            availability: 'free',
+            expert: responseExpert.body._id,
+        });
+
+        const clientA = await request(app).post('/clients').send({
+            name: 'Owner Client',
+            email: 'owner-cancel-test@example.com',
+            phone: '+1999000555',
+            password: TEST_PASSWORD,
+        });
+        const clientB = await request(app).post('/clients').send({
+            name: 'Other Client',
+            email: 'other-cancel-test@example.com',
+            phone: '+1999000666',
+            password: TEST_PASSWORD,
+        });
+
+        const agentA = request.agent(app);
+        await agentA.post('/accounts/session?role=client').send({
+            email: 'owner-cancel-test@example.com',
+            password: TEST_PASSWORD,
+        });
+        await agentA.post(`/appointments/${responseAppointment.body._id}/client`).send({});
+
+        const agentB = request.agent(app);
+        await agentB.post('/accounts/session?role=client').send({
+            email: 'other-cancel-test@example.com',
+            password: TEST_PASSWORD,
+        });
+
+        const res = await agentB.delete(`/appointments/${responseAppointment.body._id}/client`);
+        expect(res.status).toBe(400);
+        expect(res.body).toBe('You can only cancel your own booking.');
     });
 
     it('should delete an appointment', async () => {
@@ -679,9 +720,12 @@ describe('App', () => {
 
         const responseClient = await request(app).post('/clients').send(clientBody);
 
-        const responseBooking = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: emailClient,
+            password: TEST_PASSWORD,
         });
+        await agent.post(`/appointments/${appointmentId}/client`).send({});
 
         const response = await request(app).delete(`/appointments/${appointmentId}`).send({
             expert: responseExpert.body._id
@@ -744,9 +788,12 @@ describe('App', () => {
 
         const responseClient = await request(app).post('/clients').send(clientBody);
 
-        const responseBooking = await request(app).post(`/appointments/${appointmentId}/client`).send({
-            client: responseClient.body._id
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: emailClient,
+            password: TEST_PASSWORD,
         });
+        await agent.post(`/appointments/${appointmentId}/client`).send({});
 
         const responseDelete = await request(app).delete(`/appointments/${appointmentId}`).send({
             expert: responseExpert.body._id
@@ -758,6 +805,118 @@ describe('App', () => {
 
         expect(responseDeleteAgain.status).toBe(400);
         expect(responseDeleteAgain.body).toBe('Appointment is cancelled');
+    });
+
+    describe('Appointments API guards and errors', () => {
+        const missingApptId = '507f191e810c19729de860ea';
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        it('POST book returns 401 when not logged in', async () => {
+            const res = await request(app).post(`/appointments/${missingApptId}/client`).send({});
+            expect(res.status).toBe(401);
+            expect(res.body.error).toBe('Login required');
+        });
+
+        it('POST book returns 403 when logged in as expert', async () => {
+            await request(app).post('/experts').send({
+                name: 'Book Guard Expert',
+                email: 'book-guard-expert@test.com',
+                phone: '+1999111222',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=expert').send({
+                email: 'book-guard-expert@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post(`/appointments/${missingApptId}/client`).send({});
+            expect(res.status).toBe(403);
+            expect(res.body.error).toBe('Only clients can book appointments');
+        });
+
+        it('POST book returns 404 when appointment does not exist', async () => {
+            await request(app).post('/clients').send({
+                name: 'C',
+                email: 'book-404-client@test.com',
+                phone: '+1999111333',
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'book-404-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post(`/appointments/${missingApptId}/client`).send({});
+            expect(res.status).toBe(404);
+            expect(res.body).toBe('Appointment not found');
+        });
+
+        it('DELETE cancel returns 401 when not logged in', async () => {
+            const res = await request(app).delete(`/appointments/${missingApptId}/client`);
+            expect(res.status).toBe(401);
+            expect(res.body.error).toBe('Login required');
+        });
+
+        it('DELETE cancel returns 403 when logged in as expert', async () => {
+            await request(app).post('/experts').send({
+                name: 'Cancel Guard Expert',
+                email: 'cancel-guard-expert@test.com',
+                phone: '+1999111444',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=expert').send({
+                email: 'cancel-guard-expert@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.delete(`/appointments/${missingApptId}/client`);
+            expect(res.status).toBe(403);
+            expect(res.body.error).toBe('Only clients can cancel bookings');
+        });
+
+        it('DELETE cancel returns 404 when appointment does not exist', async () => {
+            await request(app).post('/clients').send({
+                name: 'C',
+                email: 'cancel-404-client@test.com',
+                phone: '+1999111555',
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'cancel-404-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.delete(`/appointments/${missingApptId}/client`);
+            expect(res.status).toBe(404);
+            expect(res.body).toBe('Appointment not found');
+        });
+
+        it('POST /appointments forwards to error handler when expert is missing', async () => {
+            const res = await request(app).post('/appointments').send({
+                startTime: new Date('2026-06-01T10:00:00').toISOString(),
+                endTime: new Date('2026-06-01T11:00:00').toISOString(),
+            });
+            expect(res.status).toBe(500);
+        });
+
+        it('GET /appointments forwards errors from Appointment.find', async () => {
+            jest.spyOn(Appointment, 'find').mockRejectedValueOnce(new Error('simulated failure'));
+            const res = await request(app).get('/appointments');
+            expect(res.status).toBe(500);
+        });
+
+        it('GET /appointments/:id forwards errors from Appointment.findById', async () => {
+            jest.spyOn(Appointment, 'findById').mockRejectedValueOnce(new Error('simulated failure'));
+            const res = await request(app).get(`/appointments/${missingApptId}`);
+            expect(res.status).toBe(500);
+        });
     });
 
     describe('accounts routes', () => {
