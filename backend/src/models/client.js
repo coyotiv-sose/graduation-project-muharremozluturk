@@ -26,16 +26,19 @@ class Client {
     }
   }
 
-  // Method to cancel a booking
+  // Method to cancel a booking (only the client who booked may cancel)
   async cancelBooking(appointment) {
-    if (appointment.availability === 'booked') {
-      appointment.availability = "free"
-      appointment.client = undefined
-      await appointment.save()
-    }
-    else {
+    if (appointment.availability !== 'booked') {
       throw new Error('Appointment is not booked.')
     }
+    const ref = appointment.client
+    const bookedById = ref == null ? null : (ref._id != null ? ref._id : ref).toString()
+    if (!bookedById || bookedById !== this._id.toString()) {
+      throw new Error('You can only cancel your own booking.')
+    }
+    appointment.availability = 'free'
+    appointment.client = undefined
+    await appointment.save()
   }
 
   /*TODO:

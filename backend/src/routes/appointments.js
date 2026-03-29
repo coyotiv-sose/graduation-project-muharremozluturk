@@ -2,9 +2,9 @@ var express = require('express');
 var router = express.Router();
 const Appointment = require('../models/appointment.js');
 const Expert = require('../models/expert.js')
-const Client = require('../models/client.js')
 const mongoose = require('mongoose');
 const { sanitizeAppointmentForRequest } = require('../utils/appointmentResponse.js');
+const { roleOfUser } = require('./accounts.js');
 
 /* GET appointment listing. */
 router.get('/', async function (req, res, next) {
@@ -45,26 +45,42 @@ router.post('/', async function (req, res, next) {
   }
 });
 
-/* Book appointment */
+/* Book appointment (session client only; body.client is ignored) */
 
 router.post('/:appointmentId/client', async function (req, res, next) {
-  const client = await Client.findById(req.body.client);
-  const appointment = await Appointment.findById(req.params.appointmentId);
+  if (!req.user) {
+    return res.status(401).json({ error: 'Login required' });
+  }
+  if (roleOfUser(req.user) !== 'client') {
+    return res.status(403).json({ error: 'Only clients can book appointments' });
+  }
   try {
-    await client.bookAppointment(appointment);
+    const appointment = await Appointment.findById(req.params.appointmentId);
+    if (!appointment) {
+      return res.status(404).json('Appointment not found');
+    }
+    await req.user.bookAppointment(appointment);
     res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (error) {
     return res.status(400).json(error.message);
   }
 });
 
-/* Cancel booking */
+/* Cancel booking (session client only; must own the booking) */
 
 router.delete('/:appointmentId/client', async function (req, res, next) {
-  const client = await Client.findById(req.body.client);
-  const appointment = await Appointment.findById(req.params.appointmentId);
+  if (!req.user) {
+    return res.status(401).json({ error: 'Login required' });
+  }
+  if (roleOfUser(req.user) !== 'client') {
+    return res.status(403).json({ error: 'Only clients can cancel bookings' });
+  }
   try {
-    await client.cancelBooking(appointment);
+    const appointment = await Appointment.findById(req.params.appointmentId);
+    if (!appointment) {
+      return res.status(404).json('Appointment not found');
+    }
+    await req.user.cancelBooking(appointment);
     res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (error) {
     return res.status(400).json(error.message);

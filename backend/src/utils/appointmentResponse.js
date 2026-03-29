@@ -72,4 +72,5 @@ function sanitizeAppointmentForRequest(appointment, req) {
 
 module.exports = {
   sanitizeAppointmentForRequest,
+  roleOfUser,
 }

@@ -11,6 +11,9 @@ export default {
       appointments: [],
       loading: true,
       errorMessage: '',
+      bookingApptId: null,
+      cancellingApptId: null,
+      actionError: '',
     }
   },
   watch: {
@@ -43,10 +46,27 @@ export default {
       const sessionId = String(this.user._id ?? '')
       return sessionId !== '' && this.clientIdFromAppointment(appt) === sessionId
     },
+    filterExpertAppointments(list, expertIdStr) {
+      return list
+        .filter((a) => this.expertIdFromAppointment(a) === expertIdStr)
+        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+    },
+    async refreshAppointments() {
+      const id = this.$route.params.id
+      if (!this.expert) return
+      try {
+        const { data: allAppointments } = await http.get('/appointments')
+        const list = Array.isArray(allAppointments) ? allAppointments : []
+        this.appointments = this.filterExpertAppointments(list, String(id))
+      } catch {
+        /* keep existing list */
+      }
+    },
     async loadExpert() {
       const id = this.$route.params.id
       this.loading = true
       this.errorMessage = ''
+      this.actionError = ''
       this.expert = null
       this.appointments = []
       try {
@@ -55,10 +75,7 @@ export default {
         try {
           const { data: allAppointments } = await http.get('/appointments')
           const list = Array.isArray(allAppointments) ? allAppointments : []
-          const idStr = String(id)
-          this.appointments = list
-            .filter((a) => this.expertIdFromAppointment(a) === idStr)
-            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+          this.appointments = this.filterExpertAppointments(list, String(id))
         } catch {
           this.appointments = []
         }
@@ -70,6 +87,36 @@ export default {
         this.errorMessage = status === 404 ? 'Expert not found' : msg
       } finally {
         this.loading = false
+      }
+    },
+    parseActionError(e, fallback) {
+      const d = e.response?.data
+      return (typeof d === 'string' ? d : d?.error) || e.message || fallback
+    },
+    async bookSlot(appt) {
+      if (!this.user || this.user.role !== 'client' || appt.availability !== 'free') return
+      this.actionError = ''
+      this.bookingApptId = appt._id
+      try {
+        await http.post(`/appointments/${appt._id}/client`, {})
+        await this.refreshAppointments()
+      } catch (e) {
+        this.actionError = this.parseActionError(e, 'Could not book this slot')
+      } finally {
+        this.bookingApptId = null
+      }
+    },
+    async cancelSlot(appt) {
+      if (!this.isClientsOwnBookedAppointment(appt)) return
+      this.actionError = ''
+      this.cancellingApptId = appt._id
+      try {
+        await http.delete(`/appointments/${appt._id}/client`)
+        await this.refreshAppointments()
+      } catch (e) {
+        this.actionError = this.parseActionError(e, 'Could not cancel this booking')
+      } finally {
+        this.cancellingApptId = null
       }
     },
     formatRate(rate) {
@@ -131,6 +178,10 @@ export default {
 
       <section class="appts" aria-labelledby="appts-heading">
         <h2 id="appts-heading" class="appts-title">Appointments</h2>
+        <p v-if="user && user.role !== 'client'" class="muted appts-hint">
+          Log in as a client to book available slots.
+        </p>
+        <p v-if="actionError" class="error appts-book-err" role="alert">{{ actionError }}</p>
         <p v-if="!appointments.length" class="muted appts-empty">No appointments scheduled.</p>
         <ul v-else class="appts-list">
           <li v-for="appt in appointments" :key="appt._id" class="appts-item">
@@ -139,16 +190,43 @@ export default {
               <span class="appts-sep">→</span>
               <span>{{ formatDateTime(appt.endTime) }}</span>
             </div>
-            <div class="appts-tags">
-              <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
-                {{ statusLabel(appt.availability) }}
-              </span>
-              <span
-                v-if="isClientsOwnBookedAppointment(appt)"
-                class="appts-yours"
+            <div class="appts-right">
+              <div class="appts-tags">
+                <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
+                  {{ statusLabel(appt.availability) }}
+                </span>
+                <span
+                  v-if="isClientsOwnBookedAppointment(appt)"
+                  class="appts-yours"
+                >
+                  Your appointment
+                </span>
+              </div>
+              <button
+                v-if="user?.role === 'client' && appt.availability === 'free'"
+                type="button"
+                class="book-btn"
+                :disabled="bookingApptId === appt._id || cancellingApptId === appt._id"
+                @click="bookSlot(appt)"
               >
-                Your appointment
-              </span>
+                {{ bookingApptId === appt._id ? 'Booking…' : 'Book' }}
+              </button>
+              <button
+                v-if="isClientsOwnBookedAppointment(appt)"
+                type="button"
+                class="cancel-btn"
+                :disabled="cancellingApptId === appt._id || bookingApptId === appt._id"
+                @click="cancelSlot(appt)"
+              >
+                {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel booking' }}
+              </button>
+              <RouterLink
+                v-else-if="!user && appt.availability === 'free'"
+                class="book-login"
+                :to="{ name: 'login', query: { role: 'client' } }"
+              >
+                Log in to book
+              </RouterLink>
             </div>
           </li>
         </ul>
@@ -305,11 +383,84 @@ dd a {
   opacity: 0.5;
 }
 
+.appts-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .appts-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
+}
+
+.appts-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.appts-book-err {
+  margin: 0 0 0.75rem;
+}
+
+.book-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: var(--vt-c-indigo);
+  color: var(--vt-c-white);
+  white-space: nowrap;
+}
+
+.book-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.book-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  background: var(--color-background);
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: var(--color-background-mute);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.book-login {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: hsla(160, 100%, 28%, 1);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.book-login:hover {
+  text-decoration: underline;
 }
 
 .appts-yours {
