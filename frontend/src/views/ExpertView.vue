@@ -6,6 +6,7 @@ export default {
   data() {
     return {
       expert: null,
+      appointments: [],
       loading: true,
       errorMessage: '',
     }
@@ -19,14 +20,31 @@ export default {
     },
   },
   methods: {
+    expertIdFromAppointment(appointment) {
+      const e = appointment?.expert
+      if (e == null) return ''
+      if (typeof e === 'object') return String(e._id ?? e)
+      return String(e)
+    },
     async loadExpert() {
       const id = this.$route.params.id
       this.loading = true
       this.errorMessage = ''
       this.expert = null
+      this.appointments = []
       try {
         const { data } = await http.get(`/experts/${id}`)
         this.expert = data
+        try {
+          const { data: allAppointments } = await http.get('/appointments')
+          const list = Array.isArray(allAppointments) ? allAppointments : []
+          const idStr = String(id)
+          this.appointments = list
+            .filter((a) => this.expertIdFromAppointment(a) === idStr)
+            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+        } catch {
+          this.appointments = []
+        }
       } catch (e) {
         const status = e.response?.status
         const d = e.response?.data
@@ -44,6 +62,20 @@ export default {
         currency: 'USD',
         maximumFractionDigits: 0,
       }).format(Number(rate))
+    },
+    formatDateTime(iso) {
+      if (iso == null || iso === '') return '—'
+      const d = new Date(iso)
+      if (Number.isNaN(d.getTime())) return '—'
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(d)
+    },
+    statusLabel(availability) {
+      if (availability == null || availability === '') return '—'
+      const s = String(availability)
+      return s.charAt(0).toUpperCase() + s.slice(1)
     },
   },
 }
@@ -79,13 +111,30 @@ export default {
           <dd>{{ formatRate(expert.hourlyRate) }}</dd>
         </div>
       </dl>
+
+      <section class="appts" aria-labelledby="appts-heading">
+        <h2 id="appts-heading" class="appts-title">Appointments</h2>
+        <p v-if="!appointments.length" class="muted appts-empty">No appointments scheduled.</p>
+        <ul v-else class="appts-list">
+          <li v-for="appt in appointments" :key="appt._id" class="appts-item">
+            <div class="appts-times">
+              <span>{{ formatDateTime(appt.startTime) }}</span>
+              <span class="appts-sep">→</span>
+              <span>{{ formatDateTime(appt.endTime) }}</span>
+            </div>
+            <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
+              {{ statusLabel(appt.availability) }}
+            </span>
+          </li>
+        </ul>
+      </section>
     </article>
   </main>
 </template>
 
 <style scoped>
 .expert-page {
-  max-width: 480px;
+  max-width: 560px;
   margin: 0 auto;
   padding: 0 0 2rem;
 }
@@ -178,5 +227,80 @@ dd a {
     grid-template-columns: 1fr;
     gap: 0.15rem;
   }
+}
+
+.appts {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.appts-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin: 0 0 0.75rem;
+}
+
+.appts-empty {
+  margin: 0;
+}
+
+.appts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.appts-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+
+.appts-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.appts-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-text);
+}
+
+.appts-sep {
+  opacity: 0.5;
+}
+
+.appts-status {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-border);
+}
+
+.appts-status--free {
+  color: hsl(145, 45%, 32%);
+}
+
+.appts-status--booked {
+  color: hsl(210, 55%, 38%);
+}
+
+.appts-status--cancelled {
+  color: hsl(0, 45%, 42%);
+  text-decoration: line-through;
+  text-decoration-color: currentColor;
 }
 </style>
