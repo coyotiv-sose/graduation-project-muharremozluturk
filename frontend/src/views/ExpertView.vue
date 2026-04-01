@@ -13,6 +13,8 @@ export default {
       errorMessage: '',
       bookingApptId: null,
       cancellingApptId: null,
+      reschedulingFromApptId: null,
+      reschedulingToApptId: null,
       actionError: '',
     }
   },
@@ -67,6 +69,8 @@ export default {
       this.loading = true
       this.errorMessage = ''
       this.actionError = ''
+      this.reschedulingFromApptId = null
+      this.reschedulingToApptId = null
       this.expert = null
       this.appointments = []
       try {
@@ -93,8 +97,35 @@ export default {
       const d = e.response?.data
       return (typeof d === 'string' ? d : d?.error) || e.message || fallback
     },
+    isReschedulingFrom(appt) {
+      return this.reschedulingFromApptId === appt?._id
+    },
+    canRescheduleTo(appt) {
+      return (
+        this.user?.role === 'client' &&
+        this.reschedulingFromApptId != null &&
+        appt?.availability === 'free' &&
+        appt?._id !== this.reschedulingFromApptId
+      )
+    },
+    startReschedule(appt) {
+      if (!this.isClientsOwnBookedAppointment(appt)) return
+      this.actionError = ''
+      this.reschedulingFromApptId = appt._id
+    },
+    cancelReschedule() {
+      this.reschedulingFromApptId = null
+      this.reschedulingToApptId = null
+    },
     async bookSlot(appt) {
-      if (!this.user || this.user.role !== 'client' || appt.availability !== 'free') return
+      if (
+        !this.user ||
+        this.user.role !== 'client' ||
+        appt.availability !== 'free' ||
+        this.reschedulingFromApptId != null
+      ) {
+        return
+      }
       this.actionError = ''
       this.bookingApptId = appt._id
       try {
@@ -106,6 +137,23 @@ export default {
         this.bookingApptId = null
       }
     },
+    async rescheduleToSlot(appt) {
+      if (!this.canRescheduleTo(appt)) return
+      this.actionError = ''
+      this.reschedulingToApptId = appt._id
+      try {
+        await http.put(`/appointments/${this.reschedulingFromApptId}`, {
+          expert: this.$route.params.id,
+          newAppointmentId: appt._id,
+        })
+        await this.refreshAppointments()
+        this.cancelReschedule()
+      } catch (e) {
+        this.actionError = this.parseActionError(e, 'Could not reschedule this booking')
+      } finally {
+        this.reschedulingToApptId = null
+      }
+    },
     async cancelSlot(appt) {
       if (!this.isClientsOwnBookedAppointment(appt)) return
       this.actionError = ''
@@ -113,6 +161,9 @@ export default {
       try {
         await http.delete(`/appointments/${appt._id}/client`)
         await this.refreshAppointments()
+        if (this.isReschedulingFrom(appt)) {
+          this.cancelReschedule()
+        }
       } catch (e) {
         this.actionError = this.parseActionError(e, 'Could not cancel this booking')
       } finally {
@@ -181,6 +232,9 @@ export default {
         <p v-if="user && user.role !== 'client'" class="muted appts-hint">
           Log in as a client to book available slots.
         </p>
+        <p v-else-if="reschedulingFromApptId" class="muted appts-hint">
+          Choose a free slot to move your appointment, or cancel rescheduling.
+        </p>
         <p v-if="actionError" class="error appts-book-err" role="alert">{{ actionError }}</p>
         <p v-if="!appointments.length" class="muted appts-empty">No appointments scheduled.</p>
         <ul v-else class="appts-list">
@@ -206,16 +260,55 @@ export default {
                 v-if="user?.role === 'client' && appt.availability === 'free'"
                 type="button"
                 class="book-btn"
-                :disabled="bookingApptId === appt._id || cancellingApptId === appt._id"
-                @click="bookSlot(appt)"
+                :disabled="
+                  bookingApptId === appt._id ||
+                  cancellingApptId === appt._id ||
+                  reschedulingToApptId === appt._id ||
+                  (reschedulingFromApptId != null && !canRescheduleTo(appt))
+                "
+                @click="canRescheduleTo(appt) ? rescheduleToSlot(appt) : bookSlot(appt)"
               >
-                {{ bookingApptId === appt._id ? 'Booking…' : 'Book' }}
+                {{
+                  canRescheduleTo(appt)
+                    ? reschedulingToApptId === appt._id
+                      ? 'Rescheduling…'
+                      : 'Move here'
+                    : bookingApptId === appt._id
+                      ? 'Booking…'
+                      : 'Book'
+                }}
+              </button>
+              <button
+                v-if="isClientsOwnBookedAppointment(appt) && !isReschedulingFrom(appt)"
+                type="button"
+                class="reschedule-btn"
+                :disabled="
+                  cancellingApptId === appt._id ||
+                  bookingApptId != null ||
+                  reschedulingToApptId != null
+                "
+                @click="startReschedule(appt)"
+              >
+                Reschedule
+              </button>
+              <button
+                v-if="isReschedulingFrom(appt)"
+                type="button"
+                class="reschedule-btn reschedule-btn--secondary"
+                :disabled="reschedulingToApptId != null"
+                @click="cancelReschedule"
+              >
+                Cancel reschedule
               </button>
               <button
                 v-if="isClientsOwnBookedAppointment(appt)"
                 type="button"
                 class="cancel-btn"
-                :disabled="cancellingApptId === appt._id || bookingApptId === appt._id"
+                :disabled="
+                  cancellingApptId === appt._id ||
+                  bookingApptId === appt._id ||
+                  reschedulingToApptId != null
+                "
                 @click="cancelSlot(appt)"
               >
                 {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel booking' }}
@@ -449,6 +542,38 @@ dd a {
 .cancel-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.reschedule-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid hsla(210, 50%, 45%, 0.35);
+  cursor: pointer;
+  background: hsla(210, 60%, 45%, 0.08);
+  color: hsl(210, 55%, 35%);
+  white-space: nowrap;
+}
+
+.reschedule-btn:hover:not(:disabled) {
+  background: hsla(210, 60%, 45%, 0.14);
+}
+
+.reschedule-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.reschedule-btn--secondary {
+  background: var(--color-background);
+  color: var(--color-heading);
+  border-color: var(--color-border);
+}
+
+.reschedule-btn--secondary:hover:not(:disabled) {
+  background: var(--color-background-mute);
 }
 
 .book-login {
