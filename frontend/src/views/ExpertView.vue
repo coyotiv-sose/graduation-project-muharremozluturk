@@ -28,6 +28,10 @@ export default {
   },
   computed: {
     ...mapState(useAccountStore, ['user']),
+    isViewingOwnExpertProfile() {
+      if (!this.user || this.user.role !== 'expert') return false
+      return String(this.user._id ?? '') === String(this.$route.params.id ?? '')
+    },
   },
   methods: {
     expertIdFromAppointment(appointment) {
@@ -47,6 +51,9 @@ export default {
       if (appt.availability !== 'booked') return false
       const sessionId = String(this.user._id ?? '')
       return sessionId !== '' && this.clientIdFromAppointment(appt) === sessionId
+    },
+    canExpertCancelAppointment(appt) {
+      return this.isViewingOwnExpertProfile && appt?.availability !== 'cancelled'
     },
     filterExpertAppointments(list, expertIdStr) {
       return list
@@ -170,6 +177,24 @@ export default {
         this.cancellingApptId = null
       }
     },
+    async cancelAppointment(appt) {
+      if (!this.canExpertCancelAppointment(appt)) return
+      this.actionError = ''
+      this.cancellingApptId = appt._id
+      try {
+        await http.delete(`/appointments/${appt._id}`, {
+          data: { expert: this.$route.params.id },
+        })
+        await this.refreshAppointments()
+        if (this.isReschedulingFrom(appt)) {
+          this.cancelReschedule()
+        }
+      } catch (e) {
+        this.actionError = this.parseActionError(e, 'Could not cancel this appointment')
+      } finally {
+        this.cancellingApptId = null
+      }
+    },
     formatRate(rate) {
       if (rate == null || rate === '') return '—'
       return new Intl.NumberFormat(undefined, {
@@ -229,7 +254,10 @@ export default {
 
       <section class="appts" aria-labelledby="appts-heading">
         <h2 id="appts-heading" class="appts-title">Appointments</h2>
-        <p v-if="user && user.role !== 'client'" class="muted appts-hint">
+        <p v-if="isViewingOwnExpertProfile" class="muted appts-hint">
+          You can cancel your own appointments and unavailable slots.
+        </p>
+        <p v-else-if="user && user.role !== 'client'" class="muted appts-hint">
           Log in as a client to book available slots.
         </p>
         <p v-else-if="reschedulingFromApptId" class="muted appts-hint">
@@ -312,6 +340,19 @@ export default {
                 @click="cancelSlot(appt)"
               >
                 {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel booking' }}
+              </button>
+              <button
+                v-else-if="canExpertCancelAppointment(appt)"
+                type="button"
+                class="cancel-btn"
+                :disabled="
+                  cancellingApptId === appt._id ||
+                  bookingApptId === appt._id ||
+                  reschedulingToApptId != null
+                "
+                @click="cancelAppointment(appt)"
+              >
+                {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel appointment' }}
               </button>
               <RouterLink
                 v-else-if="!user && appt.availability === 'free'"
