@@ -34,6 +34,13 @@ export default {
     <div class="wrapper">
       <nav class="main-nav">
         <RouterLink class="nav-home" :to="{ name: 'home' }">Home</RouterLink>
+        <RouterLink
+          v-if="user?.role === 'client'"
+          class="nav-link"
+          :to="{ name: 'profile' }"
+        >
+          My profile
+        </RouterLink>
         <div v-if="!user" class="login-tabs" role="tablist" aria-label="Login as">
           <RouterLink
             class="login-tab"
@@ -89,7 +96,20 @@ header {
   border-radius: 8px;
 }
 
+.nav-link {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  font-weight: 500;
+  color: var(--color-heading);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
 .nav-home:hover {
+  background: var(--color-background-mute);
+}
+
+.nav-link:hover {
   background: var(--color-background-mute);
 }
 
