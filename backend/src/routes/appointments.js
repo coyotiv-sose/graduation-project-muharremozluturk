@@ -89,6 +89,40 @@ router.delete('/:appointmentId/client', async function (req, res, next) {
 
 /* Cancel appointment (expert) */
 
+router.put('/:appointmentId', async function (req, res, next) {
+  const { appointmentId } = req.params;
+  const { expert: expertId, newAppointmentId } = req.body;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(appointmentId) ||
+    !mongoose.Types.ObjectId.isValid(expertId) ||
+    !mongoose.Types.ObjectId.isValid(newAppointmentId)
+  ) {
+    return res.status(404).json('Appointment not found');
+  }
+
+  try {
+    const [expert, appointment, newAppointment] = await Promise.all([
+      Expert.findById(expertId),
+      Appointment.findById(appointmentId),
+      Appointment.findById(newAppointmentId),
+    ]);
+
+    if (!expert) {
+      return res.status(404).json('Expert not found');
+    }
+
+    if (!appointment || !newAppointment) {
+      return res.status(404).json('Appointment not found');
+    }
+
+    const rescheduledAppointment = await expert.rescheduleAppointment(appointment, newAppointment);
+    res.send(sanitizeAppointmentForRequest(rescheduledAppointment, req));
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
+});
+
 router.delete('/:appointmentId', async function (req, res, next) {
   const expert = await Expert.findById(req.body.expert);
   const appointment = await Appointment.findById(req.params.appointmentId);

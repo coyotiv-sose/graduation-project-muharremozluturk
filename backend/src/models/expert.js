@@ -20,6 +20,12 @@ const expertSchema = new mongoose.Schema({
 
 expertSchema.plugin(autopopulate)
 expertSchema.plugin(passportLocalMongoose, { usernameField: 'email' })
+
+function refIdString(ref) {
+  if (ref == null) return null
+  return (ref._id != null ? ref._id : ref).toString()
+}
+
 class Expert {
 
   // Method to add available time slot
@@ -55,8 +61,42 @@ class Expert {
     }
   }
 
+  async rescheduleAppointment(currentAppointment, newAppointment) {
+    if (!currentAppointment || !newAppointment) {
+      throw new Error('Both current and new appointments are required')
+    }
+
+    if (currentAppointment._id.toString() === newAppointment._id.toString()) {
+      throw new Error('Choose a different appointment to reschedule')
+    }
+
+    if (refIdString(currentAppointment.expert) !== this._id.toString()) {
+      throw new Error('Current appointment does not belong to this expert')
+    }
+
+    if (refIdString(newAppointment.expert) !== this._id.toString()) {
+      throw new Error('New appointment does not belong to this expert')
+    }
+
+    if (currentAppointment.availability !== 'booked') {
+      throw new Error('Only booked appointments can be rescheduled')
+    }
+
+    if (newAppointment.availability !== 'free') {
+      throw new Error('New appointment must be free')
+    }
+
+    newAppointment.client = currentAppointment.client
+    newAppointment.availability = 'booked'
+
+    currentAppointment.client = undefined
+    currentAppointment.availability = 'free'
+
+    await Promise.all([currentAppointment.save(), newAppointment.save()])
+    return newAppointment
+  }
+
   /*TODO:
-  Reschedule an appointment 
   complete appointment
   add appointment notes
   profile

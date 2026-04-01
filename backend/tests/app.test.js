@@ -807,6 +807,62 @@ describe('App', () => {
         expect(responseDeleteAgain.body).toBe('Appointment is cancelled');
     });
 
+    it('should reschedule a booked appointment to a free appointment', async () => {
+        const responseExpert = await request(app).post('/experts').send({
+            name: 'Dr. Reschedule Expert',
+            email: 'reschedule-expert@example.com',
+            phone: '+1999000777',
+            specialization: 'Testing',
+            hourlyRate: 120,
+            password: TEST_PASSWORD,
+        });
+
+        const currentSlot = await request(app).post('/appointments').send({
+            startTime: new Date('2026-05-01T10:00:00').toISOString(),
+            endTime: new Date('2026-05-01T11:00:00').toISOString(),
+            availability: 'free',
+            expert: responseExpert.body._id,
+        });
+        const newSlot = await request(app).post('/appointments').send({
+            startTime: new Date('2026-05-01T12:00:00').toISOString(),
+            endTime: new Date('2026-05-01T13:00:00').toISOString(),
+            availability: 'free',
+            expert: responseExpert.body._id,
+        });
+
+        await request(app).post('/clients').send({
+            name: 'Reschedule Client',
+            email: 'reschedule-client@example.com',
+            phone: '+1999000888',
+            password: TEST_PASSWORD,
+        });
+
+        const agent = request.agent(app);
+        await agent.post('/accounts/session?role=client').send({
+            email: 'reschedule-client@example.com',
+            password: TEST_PASSWORD,
+        });
+        await agent.post(`/appointments/${currentSlot.body._id}/client`).send({});
+
+        const response = await request(app).put(`/appointments/${currentSlot.body._id}`).send({
+            expert: responseExpert.body._id,
+            newAppointmentId: newSlot.body._id,
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.body._id).toBe(newSlot.body._id);
+        expect(response.body.availability).toBe('booked');
+        expect(response.body.client).toBeUndefined();
+
+        const oldAppointment = await request(app).get(`/appointments/${currentSlot.body._id}`);
+        const rescheduledAppointment = await agent.get(`/appointments/${newSlot.body._id}`);
+
+        expect(oldAppointment.body.availability).toBe('free');
+        expect(oldAppointment.body.client).toBeUndefined();
+        expect(rescheduledAppointment.body.availability).toBe('booked');
+        expect(rescheduledAppointment.body.client._id).toBeDefined();
+    });
+
     describe('Appointments API guards and errors', () => {
         const missingApptId = '507f191e810c19729de860ea';
 
@@ -916,6 +972,107 @@ describe('App', () => {
             jest.spyOn(Appointment, 'findById').mockRejectedValueOnce(new Error('simulated failure'));
             const res = await request(app).get(`/appointments/${missingApptId}`);
             expect(res.status).toBe(500);
+        });
+
+        it('PUT /appointments/:id returns 404 for invalid ids', async () => {
+            const res = await request(app).put('/appointments/not-a-valid-id').send({
+                expert: 'also-invalid',
+                newAppointmentId: 'still-invalid',
+            });
+            expect(res.status).toBe(404);
+            expect(res.body).toBe('Appointment not found');
+        });
+
+        it('PUT /appointments/:id returns 404 when expert does not exist', async () => {
+            const expert = await request(app).post('/experts').send({
+                name: 'Route Reschedule Expert',
+                email: 'route-reschedule-expert@test.com',
+                phone: '+1999111666',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const currentSlot = await request(app).post('/appointments').send({
+                startTime: new Date('2026-06-02T10:00:00').toISOString(),
+                endTime: new Date('2026-06-02T11:00:00').toISOString(),
+                availability: 'free',
+                expert: expert.body._id,
+            });
+            const newSlot = await request(app).post('/appointments').send({
+                startTime: new Date('2026-06-02T12:00:00').toISOString(),
+                endTime: new Date('2026-06-02T13:00:00').toISOString(),
+                availability: 'free',
+                expert: expert.body._id,
+            });
+
+            const res = await request(app).put(`/appointments/${currentSlot.body._id}`).send({
+                expert: '507f191e810c19729de860eb',
+                newAppointmentId: newSlot.body._id,
+            });
+            expect(res.status).toBe(404);
+            expect(res.body).toBe('Expert not found');
+        });
+
+        it('PUT /appointments/:id returns 404 when an appointment does not exist', async () => {
+            const expert = await request(app).post('/experts').send({
+                name: 'Missing Slot Expert',
+                email: 'missing-slot-expert@test.com',
+                phone: '+1999111777',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+
+            const res = await request(app).put(`/appointments/${missingApptId}`).send({
+                expert: expert.body._id,
+                newAppointmentId: '507f191e810c19729de860eb',
+            });
+            expect(res.status).toBe(404);
+            expect(res.body).toBe('Appointment not found');
+        });
+
+        it('PUT /appointments/:id returns 400 when reschedule validation fails', async () => {
+            const expert = await request(app).post('/experts').send({
+                name: 'Busy Slot Expert',
+                email: 'busy-slot-expert@test.com',
+                phone: '+1999111888',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const currentSlot = await request(app).post('/appointments').send({
+                startTime: new Date('2026-06-03T10:00:00').toISOString(),
+                endTime: new Date('2026-06-03T11:00:00').toISOString(),
+                availability: 'free',
+                expert: expert.body._id,
+            });
+            const busyTarget = await request(app).post('/appointments').send({
+                startTime: new Date('2026-06-03T12:00:00').toISOString(),
+                endTime: new Date('2026-06-03T13:00:00').toISOString(),
+                availability: 'free',
+                expert: expert.body._id,
+            });
+
+            await request(app).post('/clients').send({
+                name: 'Busy Slot Client',
+                email: 'busy-slot-client@test.com',
+                phone: '+1999111999',
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'busy-slot-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            await agent.post(`/appointments/${currentSlot.body._id}/client`).send({});
+            await agent.post(`/appointments/${busyTarget.body._id}/client`).send({});
+
+            const res = await request(app).put(`/appointments/${currentSlot.body._id}`).send({
+                expert: expert.body._id,
+                newAppointmentId: busyTarget.body._id,
+            });
+            expect(res.status).toBe(400);
+            expect(res.body).toBe('New appointment must be free');
         });
     });
 
