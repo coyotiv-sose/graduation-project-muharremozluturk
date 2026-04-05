@@ -7,6 +7,16 @@ const app = require('../src/app');
 
 const TEST_PASSWORD = 'TestPassword1!';
 
+/** POST /appointments as a logged-in expert (free slot for that expert only). */
+async function postFreeAppointmentAsExpert(app, expertEmail, { startTime, endTime }) {
+    const agent = request.agent(app);
+    await agent.post('/accounts/session?role=expert').send({
+        email: expertEmail,
+        password: TEST_PASSWORD,
+    });
+    return agent.post('/appointments').send({ startTime, endTime });
+}
+
 describe('App', () => {
     beforeEach(async () => {
         await Client.deleteMany();
@@ -225,15 +235,8 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
-
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
         const expectedOutput = {
             startTime,
@@ -244,7 +247,7 @@ describe('App', () => {
             }
         };
 
-        const response = await request(app).post('/appointments').send(appointmentBody);
+        const response = await postFreeAppointmentAsExpert(app, email, { startTime, endTime });
 
         expect(response.status).toBe(200);
         expect(response.body).toMatchObject(expectedOutput);
@@ -267,17 +270,10 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, email, { startTime, endTime });
 
         const response = await request(app).get('/appointments');
         expect(response.status).toBe(200);
@@ -302,15 +298,8 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
-
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
         const expectedOutput = {
             startTime,
@@ -321,7 +310,7 @@ describe('App', () => {
             }
         };
 
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, email, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
         const response = await request(app).get(`/appointments/${appointmentId}`);
         expect(response.status).toBe(200);
@@ -345,15 +334,8 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
-
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
         const expectedOutput = {
             startTime,
@@ -364,7 +346,7 @@ describe('App', () => {
             }
         };
 
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, email, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
         const response = await request(app).get(`/appointments/${appointmentId}1234567890`);
         expect(response.status).toBe(404);
@@ -397,17 +379,10 @@ describe('App', () => {
 
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, emailExpert, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
 
         const clientBody = {
@@ -451,17 +426,13 @@ describe('App', () => {
         };
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-03-01T10:00:00').toISOString();
-        const endTime = new Date('2026-03-01T11:00:00').toISOString();
+        const startTime = new Date('2030-03-01T10:00:00').toISOString();
+        const endTime = new Date('2030-03-01T11:00:00').toISOString();
 
-        const responseAppointment = await request(app)
-            .post('/appointments')
-            .send({
-                startTime,
-                endTime,
-                availability: 'free',
-                expert: responseExpert.body._id,
-            });
+        const responseAppointment = await postFreeAppointmentAsExpert(app, expertBody.email, {
+            startTime,
+            endTime,
+        });
 
         const clientABody = {
             name: 'Client A',
@@ -521,17 +492,10 @@ describe('App', () => {
 
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, emailExpert, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
 
         const clientBody = {
@@ -579,17 +543,10 @@ describe('App', () => {
 
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, emailExpert, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
 
         const clientBody = {
@@ -635,14 +592,12 @@ describe('App', () => {
         };
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-04-01T10:00:00').toISOString();
-        const endTime = new Date('2026-04-01T11:00:00').toISOString();
+        const startTime = new Date('2030-04-01T10:00:00').toISOString();
+        const endTime = new Date('2030-04-01T11:00:00').toISOString();
 
-        const responseAppointment = await request(app).post('/appointments').send({
+        const responseAppointment = await postFreeAppointmentAsExpert(app, expertBody.email, {
             startTime,
             endTime,
-            availability: 'free',
-            expert: responseExpert.body._id,
         });
 
         const clientA = await request(app).post('/clients').send({
@@ -698,17 +653,10 @@ describe('App', () => {
 
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, emailExpert, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
 
         const clientBody = {
@@ -766,17 +714,10 @@ describe('App', () => {
 
         const responseExpert = await request(app).post('/experts').send(expertBody);
 
-        const startTime = new Date('2026-02-02T10:00:00').toISOString();
-        const endTime = new Date('2026-02-02T11:00:00').toISOString();
+        const startTime = new Date('2030-02-02T10:00:00').toISOString();
+        const endTime = new Date('2030-02-02T11:00:00').toISOString();
 
-        const appointmentBody = {
-            startTime,
-            endTime,
-            availability: 'free',
-            expert: responseExpert.body._id
-        };
-
-        const responseAppointment = await request(app).post('/appointments').send(appointmentBody);
+        const responseAppointment = await postFreeAppointmentAsExpert(app, emailExpert, { startTime, endTime });
         const appointmentId = responseAppointment.body._id;
 
         const clientBody = {
@@ -817,17 +758,13 @@ describe('App', () => {
             password: TEST_PASSWORD,
         });
 
-        const currentSlot = await request(app).post('/appointments').send({
-            startTime: new Date('2026-05-01T10:00:00').toISOString(),
-            endTime: new Date('2026-05-01T11:00:00').toISOString(),
-            availability: 'free',
-            expert: responseExpert.body._id,
+        const currentSlot = await postFreeAppointmentAsExpert(app, 'reschedule-expert@example.com', {
+            startTime: new Date('2030-05-01T10:00:00').toISOString(),
+            endTime: new Date('2030-05-01T11:00:00').toISOString(),
         });
-        const newSlot = await request(app).post('/appointments').send({
-            startTime: new Date('2026-05-01T12:00:00').toISOString(),
-            endTime: new Date('2026-05-01T13:00:00').toISOString(),
-            availability: 'free',
-            expert: responseExpert.body._id,
+        const newSlot = await postFreeAppointmentAsExpert(app, 'reschedule-expert@example.com', {
+            startTime: new Date('2030-05-01T12:00:00').toISOString(),
+            endTime: new Date('2030-05-01T13:00:00').toISOString(),
         });
 
         await request(app).post('/clients').send({
@@ -954,12 +891,108 @@ describe('App', () => {
             expect(res.body).toBe('Appointment not found');
         });
 
-        it('POST /appointments forwards to error handler when expert is missing', async () => {
+        it('POST /appointments returns 401 when not logged in', async () => {
             const res = await request(app).post('/appointments').send({
-                startTime: new Date('2026-06-01T10:00:00').toISOString(),
-                endTime: new Date('2026-06-01T11:00:00').toISOString(),
+                startTime: new Date('2030-06-01T10:00:00').toISOString(),
+                endTime: new Date('2030-06-01T11:00:00').toISOString(),
             });
-            expect(res.status).toBe(500);
+            expect(res.status).toBe(401);
+            expect(res.body.error).toBe('Login required');
+        });
+
+        it('POST /appointments returns 403 when logged in as client', async () => {
+            await request(app).post('/clients').send({
+                name: 'Slot Client',
+                email: 'slot-create-client@test.com',
+                phone: '+1999111000',
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'slot-create-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post('/appointments').send({
+                startTime: new Date('2030-06-01T10:00:00').toISOString(),
+                endTime: new Date('2030-06-01T11:00:00').toISOString(),
+            });
+            expect(res.status).toBe(403);
+            expect(res.body.error).toBe('Only experts can create appointment slots');
+        });
+
+        it('POST /appointments returns 400 for invalid times', async () => {
+            await request(app).post('/experts').send({
+                name: 'Bad Time Expert',
+                email: 'bad-time-expert@test.com',
+                phone: '+1999111001',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=expert').send({
+                email: 'bad-time-expert@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post('/appointments').send({
+                startTime: 'not-a-date',
+                endTime: new Date('2030-06-01T11:00:00').toISOString(),
+            });
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('Invalid startTime or endTime');
+        });
+
+        it('POST /appointments returns 400 when start time is in the past', async () => {
+            await request(app).post('/experts').send({
+                name: 'Past Slot Expert',
+                email: 'past-slot-expert@test.com',
+                phone: '+1999111004',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=expert').send({
+                email: 'past-slot-expert@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post('/appointments').send({
+                startTime: new Date('2020-01-15T10:00:00').toISOString(),
+                endTime: new Date('2020-01-15T11:00:00').toISOString(),
+            });
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('Start time cannot be in the past');
+        });
+
+        it('POST /appointments creates for the session expert only (ignores body.expert)', async () => {
+            const expertA = await request(app).post('/experts').send({
+                name: 'Expert A',
+                email: 'expert-a-slot@test.com',
+                phone: '+1999111002',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const expertB = await request(app).post('/experts').send({
+                name: 'Expert B',
+                email: 'expert-b-slot@test.com',
+                phone: '+1999111003',
+                specialization: 'S',
+                hourlyRate: 1,
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=expert').send({
+                email: 'expert-a-slot@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post('/appointments').send({
+                startTime: new Date('2030-07-01T10:00:00').toISOString(),
+                endTime: new Date('2030-07-01T11:00:00').toISOString(),
+                expert: expertB.body._id,
+            });
+            expect(res.status).toBe(200);
+            expect(res.body.expert._id).toBe(expertA.body._id);
         });
 
         it('GET /appointments forwards errors from Appointment.find', async () => {
@@ -992,17 +1025,13 @@ describe('App', () => {
                 hourlyRate: 1,
                 password: TEST_PASSWORD,
             });
-            const currentSlot = await request(app).post('/appointments').send({
-                startTime: new Date('2026-06-02T10:00:00').toISOString(),
-                endTime: new Date('2026-06-02T11:00:00').toISOString(),
-                availability: 'free',
-                expert: expert.body._id,
+            const currentSlot = await postFreeAppointmentAsExpert(app, 'route-reschedule-expert@test.com', {
+                startTime: new Date('2030-06-02T10:00:00').toISOString(),
+                endTime: new Date('2030-06-02T11:00:00').toISOString(),
             });
-            const newSlot = await request(app).post('/appointments').send({
-                startTime: new Date('2026-06-02T12:00:00').toISOString(),
-                endTime: new Date('2026-06-02T13:00:00').toISOString(),
-                availability: 'free',
-                expert: expert.body._id,
+            const newSlot = await postFreeAppointmentAsExpert(app, 'route-reschedule-expert@test.com', {
+                startTime: new Date('2030-06-02T12:00:00').toISOString(),
+                endTime: new Date('2030-06-02T13:00:00').toISOString(),
             });
 
             const res = await request(app).put(`/appointments/${currentSlot.body._id}`).send({
@@ -1040,17 +1069,13 @@ describe('App', () => {
                 hourlyRate: 1,
                 password: TEST_PASSWORD,
             });
-            const currentSlot = await request(app).post('/appointments').send({
-                startTime: new Date('2026-06-03T10:00:00').toISOString(),
-                endTime: new Date('2026-06-03T11:00:00').toISOString(),
-                availability: 'free',
-                expert: expert.body._id,
+            const currentSlot = await postFreeAppointmentAsExpert(app, 'busy-slot-expert@test.com', {
+                startTime: new Date('2030-06-03T10:00:00').toISOString(),
+                endTime: new Date('2030-06-03T11:00:00').toISOString(),
             });
-            const busyTarget = await request(app).post('/appointments').send({
-                startTime: new Date('2026-06-03T12:00:00').toISOString(),
-                endTime: new Date('2026-06-03T13:00:00').toISOString(),
-                availability: 'free',
-                expert: expert.body._id,
+            const busyTarget = await postFreeAppointmentAsExpert(app, 'busy-slot-expert@test.com', {
+                startTime: new Date('2030-06-03T12:00:00').toISOString(),
+                endTime: new Date('2030-06-03T13:00:00').toISOString(),
             });
 
             await request(app).post('/clients').send({

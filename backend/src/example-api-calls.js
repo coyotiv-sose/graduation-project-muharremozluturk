@@ -3,6 +3,7 @@ const axios = require('axios')
 
 const api = axios.create({
   baseURL: 'http://localhost:3000',
+  withCredentials: true,
 })
 
 const DEFAULT_PASSWORD = '123456.'
@@ -70,18 +71,23 @@ function slotTimes(expertIndex, slotIndex) {
   return { startTime: start, endTime: end }
 }
 
-async function postFreeAppointment(expertId, startTime, endTime) {
-  const res = await api.post('/appointments', {
-    startTime,
-    endTime,
-    availability: 'free',
-    expert: expertId,
-  })
+async function loginExpert(email, password) {
+  await api.post('/accounts/session?role=expert', { email, password })
+}
+
+async function postFreeAppointment(startTime, endTime, email, password) {
+  await loginExpert(email, password)
+  const res = await api.post('/appointments', { startTime, endTime })
   return res.data
 }
 
-async function bookAppointment(appointmentId, clientId) {
-  const res = await api.post(`/appointments/${appointmentId}/client`, { client: clientId })
+async function loginClient(email, password) {
+  await api.post('/accounts/session?role=client', { email, password })
+}
+
+async function bookAppointment(appointmentId, clientEmail, password) {
+  await loginClient(clientEmail, password)
+  const res = await api.post(`/appointments/${appointmentId}/client`, {})
   return res.data
 }
 
@@ -104,11 +110,15 @@ async function runTests() {
     /** appointmentsByExpert[e] = array of appointment docs for experts[e] */
     const appointmentsByExpert = []
     for (let e = 0; e < experts.length; e += 1) {
-      const expertId = experts[e]._id
       const list = []
       for (let s = 0; s < APPOINTMENTS_PER_EXPERT; s += 1) {
         const { startTime, endTime } = slotTimes(e, s)
-        const appointment = await postFreeAppointment(expertId, startTime, endTime)
+        const appointment = await postFreeAppointment(
+          startTime,
+          endTime,
+          expertsToCreate[e].email,
+          DEFAULT_PASSWORD,
+        )
         list.push(appointment)
         console.log(`POST /appointments (expert ${e + 1}, slot ${s + 1})`, appointment._id)
       }
@@ -116,11 +126,11 @@ async function runTests() {
     }
 
     // Dana: 1 booked appointment — first slot of expert 0
-    await bookAppointment(appointmentsByExpert[0][0]._id, clients[0]._id)
+    await bookAppointment(appointmentsByExpert[0][0]._id, clientsToCreate[0].email, DEFAULT_PASSWORD)
     console.log('BOOKED: client', clients[0].email, '→ appointment', appointmentsByExpert[0][0]._id)
 
     // Evan: 1 booked appointment — first slot of expert 1 (different expert)
-    await bookAppointment(appointmentsByExpert[1][0]._id, clients[1]._id)
+    await bookAppointment(appointmentsByExpert[1][0]._id, clientsToCreate[1].email, DEFAULT_PASSWORD)
     console.log('BOOKED: client', clients[1].email, '→ appointment', appointmentsByExpert[1][0]._id)
 
     // Fatima, Grace, Hassan: no bookings (only free slots remain for them to use later)

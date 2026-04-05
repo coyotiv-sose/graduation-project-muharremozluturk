@@ -34,11 +34,24 @@ router.get('/:appointmentId', async function (req, res, next) {
   }
 });
 
-/* Create appointment */
+/* Create free appointment slot (session expert only; always for the logged-in expert) */
 router.post('/', async function (req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Login required' });
+  }
+  if (roleOfUser(req.user) !== 'expert') {
+    return res.status(403).json({ error: 'Only experts can create appointment slots' });
+  }
+  const startTime = new Date(req.body.startTime);
+  const endTime = new Date(req.body.endTime);
+  if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
+    return res.status(400).json({ error: 'Invalid startTime or endTime' });
+  }
+  if (startTime.getTime() < Date.now()) {
+    return res.status(400).json({ error: 'Start time cannot be in the past' });
+  }
   try {
-    const expert = await Expert.findById(req.body.expert);
-    const appointment = await expert.createAppointment(req.body.startTime, req.body.endTime);
+    const appointment = await req.user.createAppointment(startTime, endTime, 'free');
     res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (err) {
     next(err);

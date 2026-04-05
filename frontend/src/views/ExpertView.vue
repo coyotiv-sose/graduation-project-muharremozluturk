@@ -16,6 +16,10 @@ export default {
       reschedulingFromApptId: null,
       reschedulingToApptId: null,
       actionError: '',
+      newSlotStart: '',
+      newSlotEnd: '',
+      creatingSlot: false,
+      createSlotError: '',
     }
   },
   watch: {
@@ -31,6 +35,13 @@ export default {
     isViewingOwnExpertProfile() {
       if (!this.user || this.user.role !== 'expert') return false
       return String(this.user._id ?? '') === String(this.$route.params.id ?? '')
+    },
+    /** Clients do not see slots that are over or free slots that already started. */
+    visibleAppointments() {
+      if (!this.user || this.user.role !== 'client') {
+        return this.appointments
+      }
+      return this.appointments.filter((a) => !this.isSlotHiddenFromClient(a))
     },
   },
   methods: {
@@ -55,6 +66,15 @@ export default {
     canExpertCancelAppointment(appt) {
       return this.isViewingOwnExpertProfile && appt?.availability !== 'cancelled'
     },
+    isSlotHiddenFromClient(appt) {
+      const start = new Date(appt?.startTime)
+      const end = new Date(appt?.endTime)
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return true
+      const now = Date.now()
+      if (end.getTime() <= now) return true
+      if (appt.availability === 'free' && start.getTime() < now) return true
+      return false
+    },
     filterExpertAppointments(list, expertIdStr) {
       return list
         .filter((a) => this.expertIdFromAppointment(a) === expertIdStr)
@@ -78,6 +98,9 @@ export default {
       this.actionError = ''
       this.reschedulingFromApptId = null
       this.reschedulingToApptId = null
+      this.newSlotStart = ''
+      this.newSlotEnd = ''
+      this.createSlotError = ''
       this.expert = null
       this.appointments = []
       try {
@@ -177,6 +200,40 @@ export default {
         this.cancellingApptId = null
       }
     },
+    async createFreeSlot() {
+      if (!this.isViewingOwnExpertProfile) return
+      this.actionError = ''
+      this.createSlotError = ''
+      const start = this.newSlotStart ? new Date(this.newSlotStart) : null
+      const end = this.newSlotEnd ? new Date(this.newSlotEnd) : null
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        this.createSlotError = 'Choose a start and end date and time.'
+        return
+      }
+      if (end <= start) {
+        this.createSlotError = 'End time must be after start time.'
+        return
+      }
+      const now = Date.now()
+      if (start.getTime() < now) {
+        this.createSlotError = 'Start time cannot be in the past.'
+        return
+      }
+      this.creatingSlot = true
+      try {
+        await http.post('/appointments', {
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+        })
+        this.newSlotStart = ''
+        this.newSlotEnd = ''
+        await this.refreshAppointments()
+      } catch (e) {
+        this.createSlotError = this.parseActionError(e, 'Could not create this slot')
+      } finally {
+        this.creatingSlot = false
+      }
+    },
     async cancelAppointment(appt) {
       if (!this.canExpertCancelAppointment(appt)) return
       this.actionError = ''
@@ -255,8 +312,40 @@ export default {
       <section class="appts" aria-labelledby="appts-heading">
         <h2 id="appts-heading" class="appts-title">Appointments</h2>
         <p v-if="isViewingOwnExpertProfile" class="muted appts-hint">
-          You can cancel your own appointments and unavailable slots.
+          Add free slots for clients to book, or cancel your own appointments and unavailable slots.
         </p>
+        <div v-if="isViewingOwnExpertProfile" class="create-slot" aria-labelledby="create-slot-heading">
+          <h3 id="create-slot-heading" class="create-slot-title">Add a free slot</h3>
+          <div class="create-slot-row">
+            <label class="create-slot-label">
+              <span class="create-slot-label-text">Start</span>
+              <input
+                v-model="newSlotStart"
+                class="create-slot-input"
+                type="datetime-local"
+                :disabled="creatingSlot"
+              />
+            </label>
+            <label class="create-slot-label">
+              <span class="create-slot-label-text">End</span>
+              <input
+                v-model="newSlotEnd"
+                class="create-slot-input"
+                type="datetime-local"
+                :disabled="creatingSlot"
+              />
+            </label>
+            <button
+              type="button"
+              class="book-btn create-slot-btn"
+              :disabled="creatingSlot"
+              @click="createFreeSlot"
+            >
+              {{ creatingSlot ? 'Adding…' : 'Add slot' }}
+            </button>
+          </div>
+          <p v-if="createSlotError" class="error create-slot-err" role="alert">{{ createSlotError }}</p>
+        </div>
         <p v-else-if="user && user.role !== 'client'" class="muted appts-hint">
           Log in as a client to book available slots.
         </p>
@@ -264,9 +353,9 @@ export default {
           Choose a free slot to move your appointment, or cancel rescheduling.
         </p>
         <p v-if="actionError" class="error appts-book-err" role="alert">{{ actionError }}</p>
-        <p v-if="!appointments.length" class="muted appts-empty">No appointments scheduled.</p>
+        <p v-if="!visibleAppointments.length" class="muted appts-empty">No appointments scheduled.</p>
         <ul v-else class="appts-list">
-          <li v-for="appt in appointments" :key="appt._id" class="appts-item">
+          <li v-for="appt in visibleAppointments" :key="appt._id" class="appts-item">
             <div class="appts-times">
               <span>{{ formatDateTime(appt.startTime) }}</span>
               <span class="appts-sep">→</span>
@@ -477,6 +566,61 @@ dd a {
   font-weight: 600;
   color: var(--color-heading);
   margin: 0 0 0.75rem;
+}
+
+.create-slot {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.create-slot-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin: 0 0 0.65rem;
+}
+
+.create-slot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem 1rem;
+}
+
+.create-slot-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-heading);
+}
+
+.create-slot-label-text {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.create-slot-input {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-soft);
+  color: var(--color-text);
+  min-width: 11rem;
+}
+
+.create-slot-btn {
+  align-self: flex-end;
+}
+
+.create-slot-err {
+  margin: 0.65rem 0 0;
+  font-size: 0.875rem;
 }
 
 .appts-empty {
