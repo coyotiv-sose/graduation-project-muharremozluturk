@@ -800,6 +800,94 @@ describe('App', () => {
         expect(rescheduledAppointment.body.client._id).toBeDefined();
     });
 
+    describe('Past appointments (completed)', () => {
+        const pastStart = new Date('2020-06-01T10:00:00.000Z');
+        const pastEnd = new Date('2020-06-01T11:00:00.000Z');
+
+        async function seedExpertWithPastSlot(email) {
+            const responseExpert = await request(app).post('/experts').send({
+                name: 'Past Expert',
+                email,
+                phone: '+1999000999',
+                specialization: 'Testing',
+                hourlyRate: 100,
+                password: TEST_PASSWORD,
+            });
+            const expertId = responseExpert.body._id;
+            const appt = await Appointment.create({
+                expert: expertId,
+                startTime: pastStart,
+                endTime: pastEnd,
+                availability: 'free',
+            });
+            await Expert.findByIdAndUpdate(expertId, { $push: { appointments: appt._id } });
+            return { expertId, appointmentId: appt._id.toString() };
+        }
+
+        it('GET /appointments/:id persists completed for a past free slot', async () => {
+            const email = `past-free-${Date.now()}@test.com`;
+            const { appointmentId } = await seedExpertWithPastSlot(email);
+            const res = await request(app).get(`/appointments/${appointmentId}`);
+            expect(res.status).toBe(200);
+            expect(res.body.availability).toBe('completed');
+        });
+
+        it('POST book returns 400 for a past (completed) slot', async () => {
+            const email = `past-book-${Date.now()}@test.com`;
+            const { appointmentId } = await seedExpertWithPastSlot(email);
+
+            await request(app).post('/clients').send({
+                name: 'Past Client',
+                email: 'past-book-client@test.com',
+                phone: '+1999000998',
+                password: TEST_PASSWORD,
+            });
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'past-book-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.post(`/appointments/${appointmentId}/client`).send({});
+            expect(res.status).toBe(400);
+            expect(res.body).toBe('Appointment is not bookable.');
+        });
+
+        it('DELETE client cancel returns 400 for a past booked appointment', async () => {
+            const email = `past-cancel-${Date.now()}@test.com`;
+            const { expertId, appointmentId } = await seedExpertWithPastSlot(email);
+
+            const clientRes = await request(app).post('/clients').send({
+                name: 'Past Cancel Client',
+                email: 'past-cancel-client@test.com',
+                phone: '+1999000997',
+                password: TEST_PASSWORD,
+            });
+            await Appointment.findByIdAndUpdate(appointmentId, {
+                availability: 'booked',
+                client: clientRes.body._id,
+            });
+
+            const agent = request.agent(app);
+            await agent.post('/accounts/session?role=client').send({
+                email: 'past-cancel-client@test.com',
+                password: TEST_PASSWORD,
+            });
+            const res = await agent.delete(`/appointments/${appointmentId}/client`);
+            expect(res.status).toBe(400);
+            expect(res.body).toBe('Completed appointments cannot be cancelled.');
+        });
+
+        it('DELETE expert (cancel) returns 400 for a past appointment', async () => {
+            const email = `past-del-${Date.now()}@test.com`;
+            const { expertId, appointmentId } = await seedExpertWithPastSlot(email);
+            const res = await request(app).delete(`/appointments/${appointmentId}`).send({
+                expert: expertId,
+            });
+            expect(res.status).toBe(400);
+            expect(res.body).toBe('Completed appointments cannot be cancelled.');
+        });
+    });
+
     describe('Appointments API guards and errors', () => {
         const missingApptId = '507f191e810c19729de860ea';
 

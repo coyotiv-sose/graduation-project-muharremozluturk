@@ -4,13 +4,15 @@ const Appointment = require('../models/appointment.js');
 const Expert = require('../models/expert.js')
 const mongoose = require('mongoose');
 const { sanitizeAppointmentForRequest } = require('../utils/appointmentResponse.js');
+const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js');
 const { roleOfUser } = require('./accounts.js');
 
 /* GET appointment listing. */
 router.get('/', async function (req, res, next) {
   try {
     const appointments = await Appointment.find();
-    res.send(appointments.map((a) => sanitizeAppointmentForRequest(a, req)));
+    const synced = await Promise.all(appointments.map((a) => ensureCompletedIfPast(a)));
+    res.send(synced.map((a) => sanitizeAppointmentForRequest(a, req)));
   } catch (err) {
     next(err);
   }
@@ -28,6 +30,7 @@ router.get('/:appointmentId', async function (req, res, next) {
 
     if (!appointment) return res.status(404).json('Appointment not found');
 
+    await ensureCompletedIfPast(appointment);
     res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (err) {
     next(err);

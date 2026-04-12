@@ -1,4 +1,5 @@
 const Appointment = require('./appointment.js')
+const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 const passportLocalMongoose = require('passport-local-mongoose').default
@@ -16,6 +17,10 @@ class Client {
 
   // Method to book an appointment
   async bookAppointment(appointment) {
+    await ensureCompletedIfPast(appointment)
+    if (appointment.availability === 'completed') {
+      throw new Error('Appointment is not bookable.')
+    }
     if (appointment.availability === "free") {
       appointment.client = this
       appointment.availability = "booked"
@@ -28,6 +33,10 @@ class Client {
 
   // Method to cancel a booking (only the client who booked may cancel)
   async cancelBooking(appointment) {
+    await ensureCompletedIfPast(appointment)
+    if (appointment.availability === 'completed') {
+      throw new Error('Completed appointments cannot be cancelled.')
+    }
     if (appointment.availability !== 'booked') {
       throw new Error('Appointment is not booked.')
     }

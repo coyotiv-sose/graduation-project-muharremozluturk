@@ -1,4 +1,5 @@
 const Appointment = require('./appointment.js')
+const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 const passportLocalMongoose = require('passport-local-mongoose').default
@@ -49,6 +50,10 @@ class Expert {
 
   // Method to remove available time slot
   async cancelAppointment(appointment) {
+    await ensureCompletedIfPast(appointment)
+    if (appointment.availability === 'completed') {
+      throw new Error('Completed appointments cannot be cancelled.')
+    }
     if (appointment.availability !== 'cancelled') {
       appointment.availability = 'cancelled'
       appointment.client = undefined
@@ -65,6 +70,9 @@ class Expert {
     if (!currentAppointment || !newAppointment) {
       throw new Error('Both current and new appointments are required')
     }
+
+    await ensureCompletedIfPast(currentAppointment)
+    await ensureCompletedIfPast(newAppointment)
 
     if (currentAppointment._id.toString() === newAppointment._id.toString()) {
       throw new Error('Choose a different appointment to reschedule')
@@ -97,7 +105,6 @@ class Expert {
   }
 
   /*TODO:
-  complete appointment
   add appointment notes
   profile
   update hourly rate
