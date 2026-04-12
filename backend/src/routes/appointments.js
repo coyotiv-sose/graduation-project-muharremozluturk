@@ -2,10 +2,25 @@ var express = require('express');
 var router = express.Router();
 const Appointment = require('../models/appointment.js');
 const Expert = require('../models/expert.js')
+const Review = require('../models/review.js')
 const mongoose = require('mongoose');
 const { sanitizeAppointmentForRequest } = require('../utils/appointmentResponse.js');
 const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js');
 const { roleOfUser } = require('./accounts.js');
+const { refIdString } = require('../utils/refs.js');
+
+function reviewToJson(review) {
+  if (!review) return null
+  const o = review.toObject ? review.toObject() : { ...review }
+  return {
+    _id: o._id,
+    appointment: o.appointment,
+    rating: o.rating,
+    text: o.text,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  }
+}
 
 /* GET appointment listing. */
 router.get('/', async function (req, res, next) {
@@ -13,25 +28,6 @@ router.get('/', async function (req, res, next) {
     const appointments = await Appointment.find();
     const synced = await Promise.all(appointments.map((a) => ensureCompletedIfPast(a)));
     res.send(synced.map((a) => sanitizeAppointmentForRequest(a, req)));
-  } catch (err) {
-    next(err);
-  }
-});
-
-/* Get appointment */
-router.get('/:appointmentId', async function (req, res, next) {
-  const { appointmentId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
-    return res.status(404).json('Appointment not found');
-  }
-  try {
-    const appointment = await Appointment.findById(appointmentId);
-
-    if (!appointment) return res.status(404).json('Appointment not found');
-
-    await ensureCompletedIfPast(appointment);
-    res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (err) {
     next(err);
   }
@@ -55,6 +51,118 @@ router.post('/', async function (req, res, next) {
   }
   try {
     const appointment = await req.user.createAppointment(startTime, endTime, 'free');
+    res.send(sanitizeAppointmentForRequest(appointment, req));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:appointmentId/review', async function (req, res, next) {
+  if (!req.user || roleOfUser(req.user) !== 'client') {
+    return res.status(403).json({ error: 'Only clients can submit reviews' });
+  }
+  const { appointmentId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+    return res.status(404).json('Appointment not found');
+  }
+  try {
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) return res.status(404).json('Appointment not found');
+    const review = await req.user.upsertReviewForAppointment(appointment, {
+      rating: req.body.rating,
+      text: req.body.text,
+    });
+    res.status(201).send(reviewToJson(review));
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
+});
+
+router.put('/:appointmentId/review', async function (req, res, next) {
+  if (!req.user || roleOfUser(req.user) !== 'client') {
+    return res.status(403).json({ error: 'Only clients can update reviews' });
+  }
+  const { appointmentId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+    return res.status(404).json('Appointment not found');
+  }
+  try {
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) return res.status(404).json('Appointment not found');
+    const review = await req.user.upsertReviewForAppointment(appointment, {
+      rating: req.body.rating,
+      text: req.body.text,
+    });
+    res.send(reviewToJson(review));
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
+});
+
+router.get('/:appointmentId/review', async function (req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Login required' });
+  }
+  const { appointmentId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+    return res.status(404).json('Appointment not found');
+  }
+  try {
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) return res.status(404).json('Appointment not found');
+    await ensureCompletedIfPast(appointment);
+    const review = await Review.findOne({ appointment: appointment._id });
+    if (!review) {
+      return res.status(404).json('Review not found');
+    }
+    const user = req.user;
+    const viewerRole = roleOfUser(user);
+    const clientId = refIdString(appointment.client);
+    const expertId = refIdString(appointment.expert);
+    const viewerId = String(user._id);
+    const canSee =
+      (viewerRole === 'client' && clientId && clientId === viewerId) ||
+      (viewerRole === 'expert' && expertId && expertId === viewerId);
+    if (!canSee) {
+      return res.status(403).json({ error: 'You cannot view this review' });
+    }
+    res.send(reviewToJson(review));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/:appointmentId/notes', async function (req, res, next) {
+  if (!req.user || roleOfUser(req.user) !== 'expert') {
+    return res.status(403).json({ error: 'Only experts can add appointment notes' });
+  }
+  const { appointmentId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+    return res.status(404).json('Appointment not found');
+  }
+  try {
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) return res.status(404).json('Appointment not found');
+    await req.user.setAppointmentNotes(appointment, req.body.notes);
+    res.send(sanitizeAppointmentForRequest(appointment, req));
+  } catch (error) {
+    return res.status(400).json(error.message);
+  }
+});
+
+/* Get appointment */
+router.get('/:appointmentId', async function (req, res, next) {
+  const { appointmentId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+    return res.status(404).json('Appointment not found');
+  }
+  try {
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) return res.status(404).json('Appointment not found');
+
+    await ensureCompletedIfPast(appointment);
     res.send(sanitizeAppointmentForRequest(appointment, req));
   } catch (err) {
     next(err);

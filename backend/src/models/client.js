@@ -1,5 +1,7 @@
 const Appointment = require('./appointment.js')
+const Review = require('./review.js')
 const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js')
+const { refIdString } = require('../utils/refs.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 const passportLocalMongoose = require('passport-local-mongoose').default
@@ -50,14 +52,87 @@ class Client {
     await appointment.save()
   }
 
-  /*TODO:
-  get upcoming bookings
-  get completed bookings
-  leave a review and rating
-  update review and rating
-  get client info
-  */
+  async getUpcomingAppointments() {
+    const now = new Date()
+    return Appointment.find({
+      client: this._id,
+      availability: 'booked',
+      endTime: { $gte: now },
+    })
+      .sort({ startTime: 1 })
+      .populate('expert', 'name email phone specialization hourlyRate')
+  }
 
+  async getCompletedAppointments() {
+    const list = await Appointment.find({ client: this._id })
+    await Promise.all(list.map((a) => ensureCompletedIfPast(a)))
+    const now = new Date()
+    return Appointment.find({
+      client: this._id,
+      $or: [{ availability: 'completed' }, { availability: 'booked', endTime: { $lt: now } }],
+    })
+      .sort({ startTime: -1 })
+      .populate('expert', 'name email phone specialization hourlyRate')
+  }
+
+  async upsertReviewForAppointment(appointment, { rating, text }) {
+    await ensureCompletedIfPast(appointment)
+    if (!appointment) {
+      throw new Error('Appointment is required')
+    }
+    if (appointment.availability !== 'completed') {
+      throw new Error('You can only review completed appointments.')
+    }
+    const bookedById = refIdString(appointment.client)
+    if (!bookedById || bookedById !== this._id.toString()) {
+      throw new Error('You can only review your own appointments.')
+    }
+    const r = Number(rating)
+    if (!Number.isInteger(r) || r < 1 || r > 5) {
+      throw new Error('Rating must be an integer from 1 to 5.')
+    }
+    const body = text == null ? '' : String(text)
+    const expertId = refIdString(appointment.expert)
+    if (!expertId) {
+      throw new Error('Appointment has no expert.')
+    }
+
+    let review = await Review.findOne({ appointment: appointment._id })
+    if (review) {
+      review.rating = r
+      review.text = body.slice(0, 8000)
+      await review.save()
+    } else {
+      review = await Review.create({
+        appointment: appointment._id,
+        client: this._id,
+        expert: expertId,
+        rating: r,
+        text: body.slice(0, 8000),
+      })
+    }
+    return review
+  }
+
+  async updateProfile(updates) {
+    const allowed = ['name', 'phone']
+    for (const key of allowed) {
+      if (Object.prototype.hasOwnProperty.call(updates, key) && updates[key] !== undefined) {
+        this[key] = updates[key]
+      }
+    }
+    await this.save()
+    return this
+  }
+
+  /** Public profile fields + id (no credentials). */
+  toPublicInfo() {
+    const o = this.toObject ? this.toObject() : { ...this }
+    delete o.hash
+    delete o.salt
+    delete o.__v
+    return o
+  }
 }
 
 clientSchema.loadClass(Client)

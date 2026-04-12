@@ -42,6 +42,9 @@ function sanitizeAppointmentForRequest(appointment, req) {
     if (Object.prototype.hasOwnProperty.call(o, 'client')) {
       delete o.client
     }
+    if (Object.prototype.hasOwnProperty.call(o, 'expertNotes')) {
+      delete o.expertNotes
+    }
     return o
   }
 
@@ -54,12 +57,18 @@ function sanitizeAppointmentForRequest(appointment, req) {
     } else if (o.client && typeof o.client === 'object') {
       o.client = sanitizeClientPublic(o.client)
     }
+    if (Object.prototype.hasOwnProperty.call(o, 'expertNotes')) {
+      delete o.expertNotes
+    }
     return o
   }
 
   if (viewerRole === 'expert') {
     if (!expertId || expertId !== viewerId) {
       delete o.client
+      if (Object.prototype.hasOwnProperty.call(o, 'expertNotes')) {
+        delete o.expertNotes
+      }
     } else if (o.client && typeof o.client === 'object') {
       o.client = sanitizeClientPublic(o.client)
     }
@@ -67,6 +76,9 @@ function sanitizeAppointmentForRequest(appointment, req) {
   }
 
   delete o.client
+  if (Object.prototype.hasOwnProperty.call(o, 'expertNotes')) {
+    delete o.expertNotes
+  }
   return o
 }
 

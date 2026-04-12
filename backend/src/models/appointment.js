@@ -20,6 +20,11 @@ const appointmentSchema = new mongoose.Schema({
       maxDepth: 0,
     },
   },
+  expertNotes: {
+    type: String,
+    default: '',
+    maxlength: 10000,
+  },
 })
 appointmentSchema.plugin(autopopulate)
 

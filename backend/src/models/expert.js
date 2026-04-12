@@ -1,5 +1,6 @@
 const Appointment = require('./appointment.js')
 const { ensureCompletedIfPast } = require('../utils/appointmentCompletion.js')
+const { refIdString } = require('../utils/refs.js')
 const mongoose = require('mongoose')
 const autopopulate = require('mongoose-autopopulate')
 const passportLocalMongoose = require('passport-local-mongoose').default
@@ -21,11 +22,6 @@ const expertSchema = new mongoose.Schema({
 
 expertSchema.plugin(autopopulate)
 expertSchema.plugin(passportLocalMongoose, { usernameField: 'email' })
-
-function refIdString(ref) {
-  if (ref == null) return null
-  return (ref._id != null ? ref._id : ref).toString()
-}
 
 class Expert {
 
@@ -104,11 +100,53 @@ class Expert {
     return newAppointment
   }
 
-  /*TODO:
-  add appointment notes
-  profile
-  update hourly rate
-  get expert info*/
+  async updateProfile(updates) {
+    const allowed = ['name', 'phone', 'specialization']
+    for (const key of allowed) {
+      if (Object.prototype.hasOwnProperty.call(updates, key) && updates[key] !== undefined) {
+        this[key] = updates[key]
+      }
+    }
+    await this.save()
+    return this
+  }
+
+  async updateHourlyRate(rate) {
+    const n = Number(rate)
+    if (Number.isNaN(n) || n < 0) {
+      throw new Error('Invalid hourly rate')
+    }
+    this.hourlyRate = n
+    await this.save()
+    return this
+  }
+
+  async setAppointmentNotes(appointment, notes) {
+    await ensureCompletedIfPast(appointment)
+    if (!appointment) {
+      throw new Error('Appointment is required')
+    }
+    if (refIdString(appointment.expert) !== this._id.toString()) {
+      throw new Error('Appointment does not belong to this expert')
+    }
+    if (appointment.availability === 'cancelled') {
+      throw new Error('Cannot add notes to a cancelled appointment')
+    }
+    const s = notes == null ? '' : String(notes)
+    appointment.expertNotes = s.slice(0, 10000)
+    await appointment.save()
+    return appointment
+  }
+
+  /** Public profile fields + id (no credentials). */
+  toPublicProfile() {
+    const o = this.toObject ? this.toObject() : { ...this }
+    delete o.hash
+    delete o.salt
+    delete o.appointments
+    delete o.__v
+    return o
+  }
 }
 
 expertSchema.loadClass(Expert)
