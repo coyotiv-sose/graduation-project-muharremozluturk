@@ -45,6 +45,11 @@ export default {
         <RouterLink class="link" :to="{ name: 'expert', params: { id: expert._id } }">
           <span class="name">{{ expert.name || 'Unnamed expert' }}</span>
           <span v-if="expert.specialization" class="meta">{{ expert.specialization }}</span>
+          <span v-if="expert.reviewCount > 0" class="rating">
+            {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
+            {{ expert.reviewCount === 1 ? 'review' : 'reviews' }}
+          </span>
+          <span v-else class="rating rating--muted">No reviews yet</span>
         </RouterLink>
       </li>
     </ul>
@@ -124,5 +129,23 @@ export default {
 .meta {
   font-size: 0.875rem;
   opacity: 0.85;
+}
+
+.rating {
+  font-size: 0.8rem;
+  color: hsl(45, 75%, 36%);
+  font-weight: 500;
+}
+
+.rating--muted {
+  color: var(--color-text);
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+@media (prefers-color-scheme: dark) {
+  .rating {
+    color: hsl(45, 80%, 68%);
+  }
 }
 </style>

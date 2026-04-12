@@ -20,6 +20,16 @@ export default {
       newSlotEnd: '',
       creatingSlot: false,
       createSlotError: '',
+      expertForm: {
+        name: '',
+        phone: '',
+        specialization: '',
+        hourlyRate: '',
+      },
+      profileSaving: false,
+      profileError: '',
+      notesDraft: {},
+      notesSavingId: null,
     }
   },
   watch: {
@@ -97,8 +107,52 @@ export default {
         const { data: allAppointments } = await http.get('/appointments')
         const list = Array.isArray(allAppointments) ? allAppointments : []
         this.appointments = this.filterExpertAppointments(list, String(id))
+        this.syncNotesDraftFromAppointments()
       } catch {
         /* keep existing list */
+      }
+    },
+    syncNotesDraftFromAppointments() {
+      const next = { ...this.notesDraft }
+      for (const a of this.appointments) {
+        next[a._id] = a.expertNotes != null && a.expertNotes !== '' ? a.expertNotes : (next[a._id] ?? '')
+      }
+      this.notesDraft = next
+    },
+    async saveExpertProfile() {
+      if (!this.isViewingOwnExpertProfile) return
+      this.profileError = ''
+      this.profileSaving = true
+      try {
+        const id = this.$route.params.id
+        await http.patch(`/experts/${id}`, {
+          name: this.expertForm.name,
+          phone: this.expertForm.phone,
+          specialization: this.expertForm.specialization,
+          hourlyRate: this.expertForm.hourlyRate === '' ? undefined : Number(this.expertForm.hourlyRate),
+        })
+        await this.loadExpert()
+        const store = useAccountStore()
+        await store.fetchUser('expert')
+      } catch (e) {
+        this.profileError = this.parseActionError(e, 'Could not save profile')
+      } finally {
+        this.profileSaving = false
+      }
+    },
+    async saveAppointmentNotes(appt) {
+      if (!this.isViewingOwnExpertProfile || appt.availability === 'cancelled') return
+      this.actionError = ''
+      this.notesSavingId = appt._id
+      try {
+        await http.put(`/appointments/${appt._id}/notes`, {
+          notes: this.notesDraft[appt._id] ?? '',
+        })
+        await this.refreshAppointments()
+      } catch (e) {
+        this.actionError = this.parseActionError(e, 'Could not save notes')
+      } finally {
+        this.notesSavingId = null
       }
     },
     async loadExpert() {
@@ -116,10 +170,17 @@ export default {
       try {
         const { data } = await http.get(`/experts/${id}`)
         this.expert = data
+        this.expertForm = {
+          name: data.name || '',
+          phone: data.phone || '',
+          specialization: data.specialization || '',
+          hourlyRate: data.hourlyRate ?? '',
+        }
         try {
           const { data: allAppointments } = await http.get('/appointments')
           const list = Array.isArray(allAppointments) ? allAppointments : []
           this.appointments = this.filterExpertAppointments(list, String(id))
+          this.syncNotesDraftFromAppointments()
         } catch {
           this.appointments = []
         }
@@ -317,7 +378,50 @@ export default {
           <dt>Hourly rate</dt>
           <dd>{{ formatRate(expert.hourlyRate) }}</dd>
         </div>
+        <div class="row">
+          <dt>Client reviews</dt>
+          <dd v-if="expert.reviewCount > 0">
+            {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
+            {{ expert.reviewCount === 1 ? 'review' : 'reviews' }}
+          </dd>
+          <dd v-else class="muted-inline">No reviews yet</dd>
+        </div>
       </dl>
+
+      <section
+        v-if="isViewingOwnExpertProfile"
+        class="expert-profile-edit"
+        aria-labelledby="expert-profile-edit-heading"
+      >
+        <h3 id="expert-profile-edit-heading" class="expert-profile-edit-title">Edit your profile</h3>
+        <div class="expert-profile-edit-grid">
+          <label class="expert-field">
+            <span>Name</span>
+            <input v-model="expertForm.name" type="text" class="expert-input" />
+          </label>
+          <label class="expert-field">
+            <span>Phone</span>
+            <input v-model="expertForm.phone" type="text" class="expert-input" />
+          </label>
+          <label class="expert-field">
+            <span>Specialization</span>
+            <input v-model="expertForm.specialization" type="text" class="expert-input" />
+          </label>
+          <label class="expert-field">
+            <span>Hourly rate (USD)</span>
+            <input v-model="expertForm.hourlyRate" type="number" min="0" step="1" class="expert-input" />
+          </label>
+        </div>
+        <p v-if="profileError" class="error expert-profile-err" role="alert">{{ profileError }}</p>
+        <button
+          type="button"
+          class="book-btn"
+          :disabled="profileSaving"
+          @click="saveExpertProfile"
+        >
+          {{ profileSaving ? 'Saving…' : 'Save profile' }}
+        </button>
+      </section>
 
       <section class="appts" aria-labelledby="appts-heading">
         <h2 id="appts-heading" class="appts-title">Appointments</h2>
@@ -365,7 +469,8 @@ export default {
         <p v-if="actionError" class="error appts-book-err" role="alert">{{ actionError }}</p>
         <p v-if="!visibleAppointments.length" class="muted appts-empty">No appointments scheduled.</p>
         <ul v-else class="appts-list">
-          <li v-for="appt in visibleAppointments" :key="appt._id" class="appts-item">
+          <li v-for="appt in visibleAppointments" :key="appt._id" class="appts-block">
+            <div class="appts-item">
             <div class="appts-times">
               <span>{{ formatDateTime(appt.startTime) }}</span>
               <span class="appts-sep">→</span>
@@ -464,6 +569,27 @@ export default {
                 Log in to book
               </RouterLink>
             </div>
+            </div>
+            <div
+              v-if="isViewingOwnExpertProfile && appt.availability !== 'cancelled'"
+              class="appts-notes-panel"
+            >
+              <p class="appts-notes-label">Private notes (only you see this)</p>
+              <textarea
+                v-model="notesDraft[appt._id]"
+                class="appts-notes-input"
+                rows="2"
+                :disabled="notesSavingId === appt._id"
+              />
+              <button
+                type="button"
+                class="cancel-btn appts-notes-save"
+                :disabled="notesSavingId === appt._id"
+                @click="saveAppointmentNotes(appt)"
+              >
+                {{ notesSavingId === appt._id ? 'Saving…' : 'Save notes' }}
+              </button>
+            </div>
           </li>
         </ul>
       </section>
@@ -514,6 +640,56 @@ export default {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-background-soft);
+}
+
+.muted-inline {
+  opacity: 0.75;
+  margin: 0;
+}
+
+.expert-profile-edit {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+.expert-profile-edit-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin: 0 0 0.65rem;
+}
+
+.expert-profile-edit-grid {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.expert-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.expert-input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-soft);
+  color: var(--color-text);
+}
+
+.expert-profile-err {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
 }
 
 .name {
@@ -646,20 +822,57 @@ dd a {
   padding: 0;
 }
 
+.appts-block {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.65rem 0;
+}
+
+.appts-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .appts-item {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--color-border);
   font-size: 0.9rem;
 }
 
-.appts-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.appts-notes-panel {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0 0;
+  border-top: 1px dashed var(--color-border);
+}
+
+.appts-notes-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-heading);
+  opacity: 0.85;
+}
+
+.appts-notes-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+  margin-bottom: 0.4rem;
+}
+
+.appts-notes-save {
+  font-size: 0.78rem;
 }
 
 .appts-times {
