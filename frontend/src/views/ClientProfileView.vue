@@ -20,11 +20,19 @@ export default {
     },
     upcomingBookings() {
       const now = Date.now()
-      return this.bookings.filter((booking) => new Date(booking.endTime).getTime() >= now)
+      return this.bookings.filter((booking) => {
+        if (!this.isOwnBooking(booking)) return false
+        if (booking.availability === 'completed') return false
+        return new Date(booking.endTime).getTime() >= now
+      })
     },
     completedBookings() {
       const now = Date.now()
-      return this.bookings.filter((booking) => new Date(booking.endTime).getTime() < now)
+      return this.bookings.filter((booking) => {
+        if (!this.isOwnBooking(booking)) return false
+        if (booking.availability === 'completed') return true
+        return new Date(booking.endTime).getTime() < now
+      })
     },
   },
   watch: {
@@ -45,8 +53,9 @@ export default {
       const expert = booking?.expert
       return typeof expert === 'object' ? expert.name || 'Expert' : 'Expert'
     },
-    isOwnBookedAppointment(booking) {
-      if (booking?.availability !== 'booked') return false
+    /** Includes past sessions persisted as `completed` by the API. */
+    isOwnBooking(booking) {
+      if (booking?.availability !== 'booked' && booking?.availability !== 'completed') return false
       const client = booking?.client
       const clientId = typeof client === 'object' ? String(client?._id ?? '') : String(client ?? '')
       return this.clientId !== '' && clientId === this.clientId
@@ -77,7 +86,7 @@ export default {
         const appointments = Array.isArray(appointmentsData) ? appointmentsData : []
         this.profile = profile
         this.bookings = appointments
-          .filter((appointment) => this.isOwnBookedAppointment(appointment))
+          .filter((appointment) => this.isOwnBooking(appointment))
           .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
       } catch (e) {
         const d = e.response?.data

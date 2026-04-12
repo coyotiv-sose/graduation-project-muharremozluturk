@@ -57,21 +57,31 @@ export default {
       if (typeof c === 'object') return String(c._id ?? c)
       return String(c)
     },
-    isClientsOwnBookedAppointment(appt) {
+    clientOwnsAppointment(appt) {
       if (!this.user || this.user.role !== 'client') return false
-      if (appt.availability !== 'booked') return false
       const sessionId = String(this.user._id ?? '')
       return sessionId !== '' && this.clientIdFromAppointment(appt) === sessionId
     },
+    /** Active booking only (not completed past sessions). */
+    isClientsOwnBookedAppointment(appt) {
+      return appt?.availability === 'booked' && this.clientOwnsAppointment(appt)
+    },
     canExpertCancelAppointment(appt) {
-      return this.isViewingOwnExpertProfile && appt?.availability !== 'cancelled'
+      return (
+        this.isViewingOwnExpertProfile &&
+        appt?.availability !== 'cancelled' &&
+        appt?.availability !== 'completed'
+      )
     },
     isSlotHiddenFromClient(appt) {
       const start = new Date(appt?.startTime)
       const end = new Date(appt?.endTime)
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return true
       const now = Date.now()
-      if (end.getTime() <= now) return true
+      if (end.getTime() <= now) {
+        if (appt.availability === 'completed' && this.clientOwnsAppointment(appt)) return false
+        return true
+      }
       if (appt.availability === 'free' && start.getTime() < now) return true
       return false
     },
@@ -367,7 +377,10 @@ export default {
                   {{ statusLabel(appt.availability) }}
                 </span>
                 <span
-                  v-if="isClientsOwnBookedAppointment(appt)"
+                  v-if="
+                    clientOwnsAppointment(appt) &&
+                    (appt.availability === 'booked' || appt.availability === 'completed')
+                  "
                   class="appts-yours"
                 >
                   Your appointment
@@ -815,5 +828,16 @@ dd a {
   color: hsl(0, 45%, 42%);
   text-decoration: line-through;
   text-decoration-color: currentColor;
+}
+
+.appts-status--completed {
+  color: hsl(265, 35%, 42%);
+  opacity: 0.95;
+}
+
+@media (prefers-color-scheme: dark) {
+  .appts-status--completed {
+    color: hsl(265, 45%, 72%);
+  }
 }
 </style>
