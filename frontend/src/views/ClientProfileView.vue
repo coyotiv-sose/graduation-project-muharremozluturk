@@ -157,15 +157,15 @@ export default {
 </script>
 
 <template>
-  <section>
-    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+  <section class="modern-page">
+    <div class="hero-panel d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
       <div class="d-flex align-items-center gap-3">
         <div
-          class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+          class="rounded-circle profile-avatar d-flex align-items-center justify-content-center flex-shrink-0"
           style="width: 56px; height: 56px"
           aria-hidden="true"
         >
-          <i class="bi bi-person-circle fs-2 text-body-secondary" />
+          {{ (profile?.name || user?.email || 'C').charAt(0).toUpperCase() }}
         </div>
         <div>
           <h1 class="h3 mb-1">My Profile</h1>
@@ -180,10 +180,10 @@ export default {
     <div v-else-if="user.role !== 'client'" class="alert alert-light border mb-0">
       This page is only available for client accounts.
     </div>
-    <div v-else-if="loading" class="alert alert-secondary mb-0" role="status">Loading…</div>
+    <div v-else-if="loading" class="modern-alert modern-alert--loading mb-0" role="status">Loading…</div>
     <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">{{ errorMessage }}</div>
     <div v-else class="d-grid gap-3">
-      <section class="card shadow-sm">
+      <section class="card modern-panel">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
             <h2 class="h5 mb-0">Profile</h2>
@@ -247,25 +247,25 @@ export default {
         </div>
       </section>
 
-      <section class="card shadow-sm">
+      <section class="card modern-panel">
         <div class="card-body">
           <h2 class="h5 mb-3">My Bookings</h2>
 
-          <h3 class="h6 text-body-secondary">Upcoming</h3>
+          <h3 class="booking-section-title">Upcoming</h3>
           <div v-if="!upcomingBookings.length" class="text-body-secondary">No upcoming bookings.</div>
           <ul v-else class="list-group list-group-flush mb-3">
-            <li v-for="booking in upcomingBookings" :key="booking._id" class="list-group-item px-0">
+            <li v-for="booking in upcomingBookings" :key="booking._id" class="list-group-item px-0 booking-row">
               <div class="d-flex align-items-center gap-3">
                 <div
-                  class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+                  class="rounded-circle list-avatar d-flex align-items-center justify-content-center flex-shrink-0"
                   style="width: 40px; height: 40px"
                   aria-hidden="true"
                 >
-                  <i class="bi bi-person-circle fs-4 text-body-secondary" />
+                  {{ expertName(booking).charAt(0).toUpperCase() }}
                 </div>
                 <div class="flex-grow-1 min-w-0">
                   <RouterLink
-                    class="fw-semibold text-decoration-none"
+                    class="fw-semibold text-decoration-none booking-link"
                     :to="{ name: 'expert', params: { id: expertId(booking) } }"
                   >
                     {{ expertName(booking) }}
@@ -274,29 +274,28 @@ export default {
                     {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
                   </div>
                 </div>
-                <i class="bi bi-chevron-right text-body-secondary" aria-hidden="true" />
               </div>
             </li>
           </ul>
 
-          <h3 class="h6 text-body-secondary">Completed</h3>
+          <h3 class="booking-section-title">Completed</h3>
           <div v-if="reviewError" class="alert alert-danger" role="alert">{{ reviewError }}</div>
           <div v-if="!completedBookings.length" class="text-body-secondary">No completed bookings.</div>
           <ul v-else class="list-group list-group-flush">
-            <li v-for="booking in completedBookings" :key="booking._id" class="list-group-item px-0">
+            <li v-for="booking in completedBookings" :key="booking._id" class="list-group-item px-0 booking-row">
               <div class="d-flex align-items-start gap-3">
                 <div
-                  class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+                  class="rounded-circle list-avatar d-flex align-items-center justify-content-center flex-shrink-0"
                   style="width: 40px; height: 40px"
                   aria-hidden="true"
                 >
-                  <i class="bi bi-person-circle fs-4 text-body-secondary" />
+                  {{ expertName(booking).charAt(0).toUpperCase() }}
                 </div>
 
                 <div class="flex-grow-1">
                   <div class="d-flex align-items-start justify-content-between gap-2">
                     <RouterLink
-                      class="fw-semibold text-decoration-none"
+                      class="fw-semibold text-decoration-none booking-link"
                       :to="{ name: 'expert', params: { id: expertId(booking) } }"
                     >
                       {{ expertName(booking) }}
@@ -309,7 +308,7 @@ export default {
                     {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
                   </div>
 
-                  <div v-if="booking.review" class="border rounded p-2 bg-body-tertiary mb-2">
+                  <div v-if="booking.review" class="review-box mb-2">
                     <div class="small fw-semibold" :title="`${booking.review.rating} / 5`">
                       {{ starsLabel(booking.review.rating) }}
                     </div>
@@ -318,16 +317,28 @@ export default {
                     </div>
                   </div>
 
-                  <div class="border-top pt-2">
+                  <div class="review-form pt-2">
                     <div class="small fw-semibold mb-2">
                       {{ booking.review ? 'Update your review' : 'Rate this session' }}
                     </div>
                     <div class="row g-2 align-items-end">
                       <div class="col-12 col-md-3">
                         <label class="form-label small fw-semibold">Rating</label>
-                        <select v-model.number="reviewDraft[booking._id].rating" class="form-select">
-                          <option v-for="n in 5" :key="n" :value="n">{{ n }} — {{ starsLabel(n) }}</option>
-                        </select>
+                        <div class="rating-stars" role="radiogroup" aria-label="Choose rating">
+                          <button
+                            v-for="n in 5"
+                            :key="n"
+                            type="button"
+                            class="rating-star-btn"
+                            :class="{ active: n <= reviewDraft[booking._id].rating }"
+                            :aria-label="`${n} star${n === 1 ? '' : 's'}`"
+                            :aria-pressed="n === reviewDraft[booking._id].rating"
+                            @click="reviewDraft[booking._id].rating = n"
+                          >
+                            <i class="bi bi-star-fill" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <div class="form-text mt-1">{{ reviewDraft[booking._id].rating }} / 5</div>
                       </div>
                       <div class="col-12 col-md-9">
                         <label class="form-label small fw-semibold">Comment (optional)</label>
@@ -366,5 +377,99 @@ export default {
 </template>
 
 <style scoped>
-/* Bootstrap handles layout */
+.modern-page {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hero-panel {
+  border: 1px solid rgba(120, 130, 160, 0.18);
+  background: linear-gradient(145deg, rgba(248, 250, 255, 0.95), rgba(245, 248, 255, 0.8));
+  border-radius: 16px;
+  padding: 0.95rem;
+}
+
+.profile-avatar,
+.list-avatar {
+  font-weight: 600;
+  border: 1px solid rgba(120, 130, 160, 0.3);
+  background: linear-gradient(160deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.18));
+  color: rgba(20, 45, 85, 0.9);
+}
+
+.list-avatar {
+  font-size: 0.95rem;
+}
+
+.modern-alert {
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(120, 130, 160, 0.2);
+}
+
+.modern-alert--loading {
+  color: var(--bs-secondary-color);
+  background: rgba(242, 244, 248, 0.9);
+}
+
+.modern-panel {
+  border-radius: 14px;
+  border: 1px solid rgba(120, 130, 160, 0.25);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.booking-row {
+  border-bottom-color: rgba(120, 130, 160, 0.18);
+}
+
+.booking-link {
+  background-color: transparent;
+}
+
+.booking-link:hover {
+  background-color: transparent;
+}
+
+.review-box {
+  border: 1px solid rgba(120, 130, 160, 0.2);
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: rgba(247, 249, 253, 0.85);
+}
+
+.review-form {
+  border-top: 1px solid rgba(120, 130, 160, 0.2);
+}
+
+.booking-section-title {
+  margin-bottom: 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--bs-body-color);
+}
+
+.rating-stars {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rating-star-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(120, 130, 160, 0.25);
+  border-radius: 999px;
+  background: #fff;
+  color: rgba(120, 130, 160, 0.75);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.rating-star-btn.active {
+  border-color: rgba(255, 168, 0, 0.5);
+  color: rgba(255, 168, 0, 1);
+  background: rgba(255, 168, 0, 0.08);
+}
 </style>

@@ -350,25 +350,25 @@ export default {
 </script>
 
 <template>
-  <section>
-    <RouterLink class="btn btn-sm btn-outline-secondary mb-3" :to="{ name: 'home' }">
+  <section class="modern-page">
+    <RouterLink class="btn btn-sm btn-outline-secondary mb-3 modern-back-link" :to="{ name: 'home' }">
       <i class="bi bi-arrow-left me-1" aria-hidden="true" />
       Back to experts
     </RouterLink>
 
-    <div v-if="loading" class="alert alert-secondary mb-0" role="status">Loading…</div>
+    <div v-if="loading" class="modern-alert modern-alert--loading mb-0" role="status">Loading…</div>
     <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">{{ errorMessage }}</div>
 
     <div v-else-if="expert" class="d-grid gap-3">
-      <section class="card shadow-sm">
+      <section class="card modern-panel modern-hero">
         <div class="card-body">
           <div class="d-flex align-items-start gap-3">
             <div
-              class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+              class="rounded-circle expert-avatar d-flex align-items-center justify-content-center flex-shrink-0"
               style="width: 64px; height: 64px"
               aria-hidden="true"
             >
-              <i class="bi bi-person-circle fs-2 text-body-secondary" />
+              {{ (expert.name || 'E').charAt(0).toUpperCase() }}
             </div>
             <div class="flex-grow-1">
               <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
@@ -407,7 +407,7 @@ export default {
         </div>
       </section>
 
-      <section v-if="isViewingOwnExpertProfile" class="card shadow-sm">
+      <section v-if="isViewingOwnExpertProfile" class="card modern-panel">
         <div class="card-body">
           <h2 class="h5 mb-3">Edit your profile</h2>
           <div class="row g-2">
@@ -439,7 +439,7 @@ export default {
         </div>
       </section>
 
-      <section class="card shadow-sm" aria-labelledby="appts-heading">
+      <section class="card modern-panel" aria-labelledby="appts-heading">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
             <h2 id="appts-heading" class="h5 mb-0">Appointments</h2>
@@ -458,7 +458,7 @@ export default {
             Choose a free slot to move your appointment, or cancel rescheduling.
           </p>
 
-          <div v-if="isViewingOwnExpertProfile" class="border rounded p-3 bg-body-tertiary mb-3">
+          <div v-if="isViewingOwnExpertProfile" class="slot-panel mb-3">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
               <h3 class="h6 mb-0">Add a free slot</h3>
             </div>
@@ -484,7 +484,7 @@ export default {
           <div v-if="!visibleAppointments.length" class="text-body-secondary">No appointments scheduled.</div>
 
           <ul v-else class="list-group list-group-flush">
-            <li v-for="appt in visibleAppointments" :key="appt._id" class="list-group-item px-0">
+            <li v-for="appt in visibleAppointments" :key="appt._id" class="list-group-item px-0 booking-row">
               <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                 <div>
                   <div class="fw-semibold">
@@ -600,7 +600,7 @@ export default {
 
               <div
                 v-if="isViewingOwnExpertProfile && appt.availability !== 'cancelled'"
-                class="mt-2 border-top pt-2"
+                class="mt-2 border-top pt-2 notes-panel"
               >
                 <div class="small fw-semibold text-body-secondary mb-1">
                   Private notes (only you see this)
@@ -629,5 +629,60 @@ export default {
 </template>
 
 <style scoped>
-/* Bootstrap handles layout */
+.modern-page {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.modern-back-link {
+  background-color: transparent;
+}
+
+.modern-back-link:hover {
+  background-color: transparent;
+}
+
+.modern-alert {
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(120, 130, 160, 0.2);
+}
+
+.modern-alert--loading {
+  color: var(--bs-secondary-color);
+  background: rgba(242, 244, 248, 0.9);
+}
+
+.modern-panel {
+  border-radius: 14px;
+  border: 1px solid rgba(120, 130, 160, 0.25);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.modern-hero {
+  background: linear-gradient(145deg, rgba(248, 250, 255, 0.95), rgba(245, 248, 255, 0.8));
+}
+
+.expert-avatar {
+  font-weight: 600;
+  font-size: 1.15rem;
+  border: 1px solid rgba(120, 130, 160, 0.3);
+  background: linear-gradient(160deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.18));
+  color: rgba(20, 45, 85, 0.9);
+}
+
+.slot-panel {
+  border: 1px solid rgba(120, 130, 160, 0.25);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(247, 249, 253, 0.8);
+}
+
+.booking-row {
+  border-bottom-color: rgba(120, 130, 160, 0.18);
+}
+
+.notes-panel {
+  border-top-color: rgba(120, 130, 160, 0.2) !important;
+}
 </style>

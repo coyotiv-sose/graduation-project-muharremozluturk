@@ -59,22 +59,18 @@ export default {
 </script>
 
 <template>
-  <section class="d-flex justify-content-center py-4">
-    <div class="card shadow-sm w-100" style="max-width: 420px">
+  <section class="login-shell d-flex justify-content-center py-4">
+    <div class="card modern-login-card w-100" style="max-width: 420px">
       <div class="card-body p-4">
         <div class="text-center mb-3">
-          <div
-            class="rounded-circle bg-body-tertiary border d-inline-flex align-items-center justify-content-center mb-2"
-            style="width: 56px; height: 56px"
-            aria-hidden="true"
-          >
-            <i class="bi bi-shield-lock fs-2 text-body-secondary" />
+          <div class="login-avatar rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px" aria-hidden="true">
+            <i class="bi bi-shield-lock fs-4" />
           </div>
           <h1 class="h4 mb-1">Sign in</h1>
           <p class="text-body-secondary mb-0">{{ hintText }}</p>
         </div>
 
-        <div class="btn-group w-100 mb-3" role="tablist" aria-label="Account type">
+        <div class="btn-group w-100 mb-3 role-switch" role="tablist" aria-label="Account type">
           <button
             type="button"
             role="tab"
@@ -97,6 +93,13 @@ export default {
             <i class="bi bi-person-workspace me-1" aria-hidden="true" />
             Expert
           </button>
+        </div>
+
+        <div v-if="activeRole === 'client'" class="signup-cta mb-3">
+          <div class="small text-body-secondary">New here?</div>
+          <RouterLink class="btn btn-sm btn-outline-primary" :to="{ name: 'signup' }">
+            Create a client account
+          </RouterLink>
         </div>
 
         <form @submit.prevent="onSubmit" class="d-grid gap-3">
@@ -139,5 +142,34 @@ export default {
 </template>
 
 <style scoped>
-/* Bootstrap handles layout */
+.login-shell {
+  padding-inline: 0.35rem;
+}
+
+.modern-login-card {
+  border-radius: 16px;
+  border: 1px solid rgba(120, 130, 160, 0.25);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(250, 252, 255, 0.95));
+}
+
+.login-avatar {
+  border: 1px solid rgba(120, 130, 160, 0.3);
+  background: linear-gradient(160deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.18));
+  color: rgba(20, 45, 85, 0.9);
+}
+
+.role-switch .btn {
+  border-radius: 10px !important;
+}
+
+.signup-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(120, 130, 160, 0.2);
+  border-radius: 12px;
+  background: rgba(247, 249, 253, 0.8);
+}
 </style>
