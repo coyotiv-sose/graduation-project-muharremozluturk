@@ -1,6 +1,7 @@
 var express = require('express')
 var router = express.Router()
 const Client = require('../models/client.js')
+const Expert = require('../models/expert.js')
 const Review = require('../models/review.js')
 const mongoose = require('mongoose')
 const { roleOfUser } = require('./accounts.js')
@@ -36,8 +37,35 @@ router.get('/', async function (req, res, next) {
 
 router.post('/', async function (req, res, next) {
   const { name, email, phone, password } = req.body
-  const client = await Client.register({ name, email, phone }, password)
-  res.send(client.toPublicInfo ? client.toPublicInfo() : client)
+  const normalizedEmail = String(email || '')
+    .trim()
+    .toLowerCase()
+  if (!normalizedEmail) {
+    return res.status(400).json({ error: 'Email is required' })
+  }
+  if (!password || String(password).length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long' })
+  }
+  const normalizedPhone = String(phone || '').replace(/\s+/g, '')
+  if (!/^\d+$/.test(normalizedPhone) || normalizedPhone.length < 10 || normalizedPhone.length > 15) {
+    return res.status(400).json({ error: 'Invalid phone number. Use 10 to 15 digits.' })
+  }
+  try {
+    const [existingClient, existingExpert] = await Promise.all([
+      Client.findOne({ email: normalizedEmail }),
+      Expert.findOne({ email: normalizedEmail }),
+    ])
+    if (existingClient || existingExpert) {
+      return res.status(409).json({ error: 'This email is already in use' })
+    }
+    const client = await Client.register({ name, email: normalizedEmail, phone: normalizedPhone }, password)
+    res.send(client.toPublicInfo ? client.toPublicInfo() : client)
+  } catch (err) {
+    if (err && err.name === 'UserExistsError') {
+      return res.status(409).json({ error: 'This email is already in use' })
+    }
+    next(err)
+  }
 })
 
 router.get('/:id/upcoming-appointments', async function (req, res, next) {

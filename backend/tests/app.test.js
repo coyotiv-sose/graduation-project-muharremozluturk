@@ -79,6 +79,37 @@ describe('App', () => {
         expect(response.body._id).toBeDefined();
     });
 
+    it('should reject client signup when email is already in use', async () => {
+        const email = 'duplicate-client@example.com';
+        await request(app).post('/clients').send({
+            name: 'First Client',
+            email,
+            phone: '+1234500001',
+            password: TEST_PASSWORD,
+        });
+
+        const duplicate = await request(app).post('/clients').send({
+            name: 'Second Client',
+            email,
+            phone: '+1234500002',
+            password: TEST_PASSWORD,
+        });
+
+        expect(duplicate.status).toBe(409);
+        expect(duplicate.body.error).toBe('This email is already in use');
+    });
+
+    it('should reject client signup when phone is invalid', async () => {
+        const response = await request(app).post('/clients').send({
+            name: 'Invalid Phone Client',
+            email: 'invalid-phone@example.com',
+            phone: '12ab',
+            password: TEST_PASSWORD,
+        });
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Invalid phone number. Use 10 to 15 digits.');
+    });
+
     it('should get all experts', async () => {
         const name = 'Dr. Test Expert';
         const email = 'test@example.com';
