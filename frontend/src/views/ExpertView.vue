@@ -350,707 +350,284 @@ export default {
 </script>
 
 <template>
-  <main class="expert-page">
-    <p class="back-row">
-      <RouterLink class="back" :to="{ name: 'home' }">← Experts</RouterLink>
-    </p>
-    <p v-if="loading" class="muted">Loading…</p>
-    <p v-else-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
+  <section>
+    <RouterLink class="btn btn-sm btn-outline-secondary mb-3" :to="{ name: 'home' }">
+      <i class="bi bi-arrow-left me-1" aria-hidden="true" />
+      Back to experts
+    </RouterLink>
 
-    <article v-else-if="expert" class="card">
-      <h1 class="name">{{ expert.name || 'Expert' }}</h1>
-      <dl class="fields">
-        <div v-if="expert.specialization" class="row">
-          <dt>Specialization</dt>
-          <dd>{{ expert.specialization }}</dd>
-        </div>
-        <div v-if="expert.email" class="row">
-          <dt>Email</dt>
-          <dd>
-            <a :href="`mailto:${expert.email}`">{{ expert.email }}</a>
-          </dd>
-        </div>
-        <div v-if="expert.phone" class="row">
-          <dt>Phone</dt>
-          <dd>{{ expert.phone }}</dd>
-        </div>
-        <div class="row">
-          <dt>Hourly rate</dt>
-          <dd>{{ formatRate(expert.hourlyRate) }}</dd>
-        </div>
-        <div class="row">
-          <dt>Client reviews</dt>
-          <dd v-if="expert.reviewCount > 0">
-            {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
-            {{ expert.reviewCount === 1 ? 'review' : 'reviews' }}
-          </dd>
-          <dd v-else class="muted-inline">No reviews yet</dd>
-        </div>
-      </dl>
+    <div v-if="loading" class="alert alert-secondary mb-0" role="status">Loading…</div>
+    <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">{{ errorMessage }}</div>
 
-      <section
-        v-if="isViewingOwnExpertProfile"
-        class="expert-profile-edit"
-        aria-labelledby="expert-profile-edit-heading"
-      >
-        <h3 id="expert-profile-edit-heading" class="expert-profile-edit-title">Edit your profile</h3>
-        <div class="expert-profile-edit-grid">
-          <label class="expert-field">
-            <span>Name</span>
-            <input v-model="expertForm.name" type="text" class="expert-input" />
-          </label>
-          <label class="expert-field">
-            <span>Phone</span>
-            <input v-model="expertForm.phone" type="text" class="expert-input" />
-          </label>
-          <label class="expert-field">
-            <span>Specialization</span>
-            <input v-model="expertForm.specialization" type="text" class="expert-input" />
-          </label>
-          <label class="expert-field">
-            <span>Hourly rate (USD)</span>
-            <input v-model="expertForm.hourlyRate" type="number" min="0" step="1" class="expert-input" />
-          </label>
-        </div>
-        <p v-if="profileError" class="error expert-profile-err" role="alert">{{ profileError }}</p>
-        <button
-          type="button"
-          class="book-btn"
-          :disabled="profileSaving"
-          @click="saveExpertProfile"
-        >
-          {{ profileSaving ? 'Saving…' : 'Save profile' }}
-        </button>
-      </section>
-
-      <section class="appts" aria-labelledby="appts-heading">
-        <h2 id="appts-heading" class="appts-title">Appointments</h2>
-        <p v-if="isViewingOwnExpertProfile" class="muted appts-hint">
-          Add free slots for clients to book, or cancel your own appointments and unavailable slots.
-        </p>
-        <div v-if="isViewingOwnExpertProfile" class="create-slot" aria-labelledby="create-slot-heading">
-          <h3 id="create-slot-heading" class="create-slot-title">Add a free slot</h3>
-          <div class="create-slot-row">
-            <label class="create-slot-label">
-              <span class="create-slot-label-text">Start</span>
-              <input
-                v-model="newSlotStart"
-                class="create-slot-input"
-                type="datetime-local"
-                :disabled="creatingSlot"
-              />
-            </label>
-            <label class="create-slot-label">
-              <span class="create-slot-label-text">End</span>
-              <input
-                v-model="newSlotEnd"
-                class="create-slot-input"
-                type="datetime-local"
-                :disabled="creatingSlot"
-              />
-            </label>
-            <button
-              type="button"
-              class="book-btn create-slot-btn"
-              :disabled="creatingSlot"
-              @click="createFreeSlot"
-            >
-              {{ creatingSlot ? 'Adding…' : 'Add slot' }}
-            </button>
-          </div>
-          <p v-if="createSlotError" class="error create-slot-err" role="alert">{{ createSlotError }}</p>
-        </div>
-        <p v-else-if="user && user.role !== 'client'" class="muted appts-hint">
-          Log in as a client to book available slots.
-        </p>
-        <p v-else-if="reschedulingFromApptId" class="muted appts-hint">
-          Choose a free slot to move your appointment, or cancel rescheduling.
-        </p>
-        <p v-if="actionError" class="error appts-book-err" role="alert">{{ actionError }}</p>
-        <p v-if="!visibleAppointments.length" class="muted appts-empty">No appointments scheduled.</p>
-        <ul v-else class="appts-list">
-          <li v-for="appt in visibleAppointments" :key="appt._id" class="appts-block">
-            <div class="appts-item">
-            <div class="appts-times">
-              <span>{{ formatDateTime(appt.startTime) }}</span>
-              <span class="appts-sep">→</span>
-              <span>{{ formatDateTime(appt.endTime) }}</span>
-            </div>
-            <div class="appts-right">
-              <div class="appts-tags">
-                <span class="appts-status" :class="`appts-status--${String(appt.availability || '')}`">
-                  {{ statusLabel(appt.availability) }}
-                </span>
-                <span
-                  v-if="
-                    clientOwnsAppointment(appt) &&
-                    (appt.availability === 'booked' || appt.availability === 'completed')
-                  "
-                  class="appts-yours"
-                >
-                  Your appointment
-                </span>
-              </div>
-              <button
-                v-if="user?.role === 'client' && appt.availability === 'free'"
-                type="button"
-                class="book-btn"
-                :disabled="
-                  bookingApptId === appt._id ||
-                  cancellingApptId === appt._id ||
-                  reschedulingToApptId === appt._id ||
-                  (reschedulingFromApptId != null && !canRescheduleTo(appt))
-                "
-                @click="canRescheduleTo(appt) ? rescheduleToSlot(appt) : bookSlot(appt)"
-              >
-                {{
-                  canRescheduleTo(appt)
-                    ? reschedulingToApptId === appt._id
-                      ? 'Rescheduling…'
-                      : 'Move here'
-                    : bookingApptId === appt._id
-                      ? 'Booking…'
-                      : 'Book'
-                }}
-              </button>
-              <button
-                v-if="isClientsOwnBookedAppointment(appt) && !isReschedulingFrom(appt)"
-                type="button"
-                class="reschedule-btn"
-                :disabled="
-                  cancellingApptId === appt._id ||
-                  bookingApptId != null ||
-                  reschedulingToApptId != null
-                "
-                @click="startReschedule(appt)"
-              >
-                Reschedule
-              </button>
-              <button
-                v-if="isReschedulingFrom(appt)"
-                type="button"
-                class="reschedule-btn reschedule-btn--secondary"
-                :disabled="reschedulingToApptId != null"
-                @click="cancelReschedule"
-              >
-                Cancel reschedule
-              </button>
-              <button
-                v-if="isClientsOwnBookedAppointment(appt)"
-                type="button"
-                class="cancel-btn"
-                :disabled="
-                  cancellingApptId === appt._id ||
-                  bookingApptId === appt._id ||
-                  reschedulingToApptId != null
-                "
-                @click="cancelSlot(appt)"
-              >
-                {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel booking' }}
-              </button>
-              <button
-                v-else-if="canExpertCancelAppointment(appt)"
-                type="button"
-                class="cancel-btn"
-                :disabled="
-                  cancellingApptId === appt._id ||
-                  bookingApptId === appt._id ||
-                  reschedulingToApptId != null
-                "
-                @click="cancelAppointment(appt)"
-              >
-                {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel appointment' }}
-              </button>
-              <RouterLink
-                v-else-if="!user && appt.availability === 'free'"
-                class="book-login"
-                :to="{ name: 'login', query: { role: 'client' } }"
-              >
-                Log in to book
-              </RouterLink>
-            </div>
-            </div>
+    <div v-else-if="expert" class="d-grid gap-3">
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-start gap-3">
             <div
-              v-if="isViewingOwnExpertProfile && appt.availability !== 'cancelled'"
-              class="appts-notes-panel"
+              class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+              style="width: 64px; height: 64px"
+              aria-hidden="true"
             >
-              <p class="appts-notes-label">Private notes (only you see this)</p>
-              <textarea
-                v-model="notesDraft[appt._id]"
-                class="appts-notes-input"
-                rows="2"
-                :disabled="notesSavingId === appt._id"
-              />
-              <button
-                type="button"
-                class="cancel-btn appts-notes-save"
-                :disabled="notesSavingId === appt._id"
-                @click="saveAppointmentNotes(appt)"
-              >
-                {{ notesSavingId === appt._id ? 'Saving…' : 'Save notes' }}
+              <i class="bi bi-person-circle fs-2 text-body-secondary" />
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                <div>
+                  <h1 class="h3 mb-1">{{ expert.name || 'Expert' }}</h1>
+                  <div v-if="expert.specialization" class="text-body-secondary">
+                    {{ expert.specialization }}
+                  </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <span v-if="expert.reviewCount > 0" class="badge text-bg-warning-subtle border text-warning-emphasis">
+                    <i class="bi bi-star-fill me-1" aria-hidden="true" />
+                    {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
+                  </span>
+                  <span v-else class="badge text-bg-light border text-body-secondary">No reviews yet</span>
+                  <span class="badge text-bg-light border">{{ formatRate(expert.hourlyRate) }} / hour</span>
+                </div>
+              </div>
+
+              <dl class="row g-2 mt-3 mb-0">
+                <template v-if="expert.email">
+                  <dt class="col-12 col-sm-3 text-body-secondary">Email</dt>
+                  <dd class="col-12 col-sm-9 mb-0">
+                    <a class="link-primary text-decoration-none" :href="`mailto:${expert.email}`">{{ expert.email }}</a>
+                  </dd>
+                </template>
+                <template v-if="expert.phone">
+                  <dt class="col-12 col-sm-3 text-body-secondary">Phone</dt>
+                  <dd class="col-12 col-sm-9 mb-0">{{ expert.phone }}</dd>
+                </template>
+                <dt class="col-12 col-sm-3 text-body-secondary">Hourly rate</dt>
+                <dd class="col-12 col-sm-9 mb-0">{{ formatRate(expert.hourlyRate) }}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="isViewingOwnExpertProfile" class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Edit your profile</h2>
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Name</label>
+              <input v-model="expertForm.name" type="text" class="form-control" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Phone</label>
+              <input v-model="expertForm.phone" type="text" class="form-control" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Specialization</label>
+              <input v-model="expertForm.specialization" type="text" class="form-control" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Hourly rate (USD)</label>
+              <input v-model="expertForm.hourlyRate" type="number" min="0" step="1" class="form-control" />
+            </div>
+            <div v-if="profileError" class="col-12">
+              <div class="alert alert-danger mb-0" role="alert">{{ profileError }}</div>
+            </div>
+            <div class="col-12">
+              <button type="button" class="btn btn-primary" :disabled="profileSaving" @click="saveExpertProfile">
+                {{ profileSaving ? 'Saving…' : 'Save profile' }}
               </button>
             </div>
-          </li>
-        </ul>
+          </div>
+        </div>
       </section>
-    </article>
-  </main>
+
+      <section class="card shadow-sm" aria-labelledby="appts-heading">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <h2 id="appts-heading" class="h5 mb-0">Appointments</h2>
+            <span v-if="reschedulingFromApptId" class="badge text-bg-info-subtle border text-info-emphasis">
+              Rescheduling mode
+            </span>
+          </div>
+
+          <p v-if="isViewingOwnExpertProfile" class="text-body-secondary mb-3">
+            Add free slots for clients to book, or cancel your own appointments and unavailable slots.
+          </p>
+          <p v-else-if="user && user.role !== 'client'" class="text-body-secondary mb-3">
+            Log in as a client to book available slots.
+          </p>
+          <p v-else-if="reschedulingFromApptId" class="text-body-secondary mb-3">
+            Choose a free slot to move your appointment, or cancel rescheduling.
+          </p>
+
+          <div v-if="isViewingOwnExpertProfile" class="border rounded p-3 bg-body-tertiary mb-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <h3 class="h6 mb-0">Add a free slot</h3>
+            </div>
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-md-5">
+                <label class="form-label small fw-semibold">Start</label>
+                <input v-model="newSlotStart" class="form-control" type="datetime-local" :disabled="creatingSlot" />
+              </div>
+              <div class="col-12 col-md-5">
+                <label class="form-label small fw-semibold">End</label>
+                <input v-model="newSlotEnd" class="form-control" type="datetime-local" :disabled="creatingSlot" />
+              </div>
+              <div class="col-12 col-md-2 d-grid">
+                <button type="button" class="btn btn-primary" :disabled="creatingSlot" @click="createFreeSlot">
+                  {{ creatingSlot ? 'Adding…' : 'Add slot' }}
+                </button>
+              </div>
+            </div>
+            <div v-if="createSlotError" class="alert alert-danger mt-2 mb-0" role="alert">{{ createSlotError }}</div>
+          </div>
+
+          <div v-if="actionError" class="alert alert-danger" role="alert">{{ actionError }}</div>
+          <div v-if="!visibleAppointments.length" class="text-body-secondary">No appointments scheduled.</div>
+
+          <ul v-else class="list-group list-group-flush">
+            <li v-for="appt in visibleAppointments" :key="appt._id" class="list-group-item px-0">
+              <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                <div>
+                  <div class="fw-semibold">
+                    {{ formatDateTime(appt.startTime) }}
+                    <span class="text-body-secondary mx-1">→</span>
+                    {{ formatDateTime(appt.endTime) }}
+                  </div>
+                  <div class="mt-1 d-flex gap-2 flex-wrap">
+                    <span
+                      class="badge border"
+                      :class="{
+                        'text-bg-success-subtle text-success-emphasis': appt.availability === 'free',
+                        'text-bg-primary-subtle text-primary-emphasis': appt.availability === 'booked',
+                        'text-bg-danger-subtle text-danger-emphasis': appt.availability === 'cancelled',
+                        'text-bg-secondary-subtle text-secondary-emphasis': appt.availability === 'completed',
+                      }"
+                    >
+                      {{ statusLabel(appt.availability) }}
+                    </span>
+                    <span
+                      v-if="
+                        clientOwnsAppointment(appt) &&
+                        (appt.availability === 'booked' || appt.availability === 'completed')
+                      "
+                      class="badge text-bg-info-subtle border text-info-emphasis"
+                    >
+                      Your appointment
+                    </span>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <button
+                    v-if="user?.role === 'client' && appt.availability === 'free'"
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    :disabled="
+                      bookingApptId === appt._id ||
+                      cancellingApptId === appt._id ||
+                      reschedulingToApptId === appt._id ||
+                      (reschedulingFromApptId != null && !canRescheduleTo(appt))
+                    "
+                    @click="canRescheduleTo(appt) ? rescheduleToSlot(appt) : bookSlot(appt)"
+                  >
+                    {{
+                      canRescheduleTo(appt)
+                        ? reschedulingToApptId === appt._id
+                          ? 'Rescheduling…'
+                          : 'Move here'
+                        : bookingApptId === appt._id
+                          ? 'Booking…'
+                          : 'Book'
+                    }}
+                  </button>
+
+                  <button
+                    v-if="isClientsOwnBookedAppointment(appt) && !isReschedulingFrom(appt)"
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    :disabled="cancellingApptId === appt._id || bookingApptId != null || reschedulingToApptId != null"
+                    @click="startReschedule(appt)"
+                  >
+                    Reschedule
+                  </button>
+
+                  <button
+                    v-if="isReschedulingFrom(appt)"
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    :disabled="reschedulingToApptId != null"
+                    @click="cancelReschedule"
+                  >
+                    Cancel reschedule
+                  </button>
+
+                  <button
+                    v-if="isClientsOwnBookedAppointment(appt)"
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    :disabled="
+                      cancellingApptId === appt._id ||
+                      bookingApptId === appt._id ||
+                      reschedulingToApptId != null
+                    "
+                    @click="cancelSlot(appt)"
+                  >
+                    {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel booking' }}
+                  </button>
+
+                  <button
+                    v-else-if="canExpertCancelAppointment(appt)"
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    :disabled="
+                      cancellingApptId === appt._id ||
+                      bookingApptId === appt._id ||
+                      reschedulingToApptId != null
+                    "
+                    @click="cancelAppointment(appt)"
+                  >
+                    {{ cancellingApptId === appt._id ? 'Cancelling…' : 'Cancel appointment' }}
+                  </button>
+
+                  <RouterLink
+                    v-else-if="!user && appt.availability === 'free'"
+                    class="btn btn-sm btn-outline-primary"
+                    :to="{ name: 'login', query: { role: 'client' } }"
+                  >
+                    Log in to book
+                  </RouterLink>
+                </div>
+              </div>
+
+              <div
+                v-if="isViewingOwnExpertProfile && appt.availability !== 'cancelled'"
+                class="mt-2 border-top pt-2"
+              >
+                <div class="small fw-semibold text-body-secondary mb-1">
+                  Private notes (only you see this)
+                </div>
+                <textarea
+                  v-model="notesDraft[appt._id]"
+                  class="form-control"
+                  rows="2"
+                  :disabled="notesSavingId === appt._id"
+                />
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary mt-2"
+                  :disabled="notesSavingId === appt._id"
+                  @click="saveAppointmentNotes(appt)"
+                >
+                  {{ notesSavingId === appt._id ? 'Saving…' : 'Save notes' }}
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </section>
 </template>
 
 <style scoped>
-.expert-page {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 0 0 2rem;
-}
-
-.back-row {
-  margin: 0 0 1rem;
-}
-
-.back {
-  font-size: 0.9rem;
-  color: var(--color-heading);
-  text-decoration: none;
-}
-
-.back:hover {
-  text-decoration: underline;
-}
-
-.muted {
-  color: var(--color-text);
-  opacity: 0.75;
-  margin: 0;
-}
-
-.error {
-  color: #c0392b;
-  margin: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .error {
-    color: #ff6b6b;
-  }
-}
-
-.card {
-  padding: 1.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-background-soft);
-}
-
-.muted-inline {
-  opacity: 0.75;
-  margin: 0;
-}
-
-.expert-profile-edit {
-  margin: 1.25rem 0 0;
-  padding: 1rem;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-}
-
-.expert-profile-edit-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 0.65rem;
-}
-
-.expert-profile-edit-grid {
-  display: grid;
-  gap: 0.65rem;
-  margin-bottom: 0.65rem;
-}
-
-.expert-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-heading);
-}
-
-.expert-input {
-  font: inherit;
-  font-size: 0.9rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-soft);
-  color: var(--color-text);
-}
-
-.expert-profile-err {
-  margin: 0 0 0.5rem;
-  font-size: 0.875rem;
-}
-
-.name {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 1.25rem;
-}
-
-.fields {
-  margin: 0;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 8rem 1fr;
-  gap: 0.5rem 1rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.row:first-of-type {
-  padding-top: 0;
-}
-
-dt {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  opacity: 0.85;
-}
-
-dd {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-dd a {
-  color: hsla(160, 100%, 30%, 1);
-}
-
-@media (max-width: 480px) {
-  .row {
-    grid-template-columns: 1fr;
-    gap: 0.15rem;
-  }
-}
-
-.appts {
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.appts-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 0.75rem;
-}
-
-.create-slot {
-  margin: 0 0 1.25rem;
-  padding: 1rem;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-}
-
-.create-slot-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 0.65rem;
-}
-
-.create-slot-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.65rem 1rem;
-}
-
-.create-slot-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.8rem;
-  color: var(--color-heading);
-}
-
-.create-slot-label-text {
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-.create-slot-input {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background-soft);
-  color: var(--color-text);
-  min-width: 11rem;
-}
-
-.create-slot-btn {
-  align-self: flex-end;
-}
-
-.create-slot-err {
-  margin: 0.65rem 0 0;
-  font-size: 0.875rem;
-}
-
-.appts-empty {
-  margin: 0;
-}
-
-.appts-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.appts-block {
-  border-bottom: 1px solid var(--color-border);
-  padding: 0.65rem 0;
-}
-
-.appts-block:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.appts-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
-
-.appts-notes-panel {
-  margin-top: 0.65rem;
-  padding: 0.65rem 0 0;
-  border-top: 1px dashed var(--color-border);
-}
-
-.appts-notes-label {
-  margin: 0 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--color-heading);
-  opacity: 0.85;
-}
-
-.appts-notes-input {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
-  margin-bottom: 0.4rem;
-}
-
-.appts-notes-save {
-  font-size: 0.78rem;
-}
-
-.appts-times {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--color-text);
-}
-
-.appts-sep {
-  opacity: 0.5;
-}
-
-.appts-right {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.appts-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.appts-hint {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-}
-
-.appts-book-err {
-  margin: 0 0 0.75rem;
-}
-
-.book-btn {
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: var(--vt-c-indigo);
-  color: var(--vt-c-white);
-  white-space: nowrap;
-}
-
-.book-btn:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.book-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.cancel-btn {
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  background: var(--color-background);
-  color: var(--color-heading);
-  white-space: nowrap;
-}
-
-.cancel-btn:hover:not(:disabled) {
-  background: var(--color-background-mute);
-}
-
-.cancel-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.reschedule-btn {
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid hsla(210, 50%, 45%, 0.35);
-  cursor: pointer;
-  background: hsla(210, 60%, 45%, 0.08);
-  color: hsl(210, 55%, 35%);
-  white-space: nowrap;
-}
-
-.reschedule-btn:hover:not(:disabled) {
-  background: hsla(210, 60%, 45%, 0.14);
-}
-
-.reschedule-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.reschedule-btn--secondary {
-  background: var(--color-background);
-  color: var(--color-heading);
-  border-color: var(--color-border);
-}
-
-.reschedule-btn--secondary:hover:not(:disabled) {
-  background: var(--color-background-mute);
-}
-
-.book-login {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: hsla(160, 100%, 28%, 1);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.book-login:hover {
-  text-decoration: underline;
-}
-
-.appts-yours {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.45rem;
-  border-radius: 4px;
-  background: hsla(210, 60%, 45%, 0.12);
-  color: hsl(210, 55%, 35%);
-  border: 1px solid hsla(210, 50%, 45%, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-  .appts-yours {
-    background: hsla(210, 45%, 55%, 0.2);
-    color: hsl(210, 70%, 78%);
-    border-color: hsla(210, 45%, 50%, 0.45);
-  }
-}
-
-.appts-status {
-  font-weight: 600;
-  font-size: 0.8rem;
-  text-transform: capitalize;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  background: var(--color-background-mute);
-  border: 1px solid var(--color-border);
-}
-
-.appts-status--free {
-  color: hsl(145, 45%, 32%);
-}
-
-.appts-status--booked {
-  color: hsl(210, 55%, 38%);
-}
-
-.appts-status--cancelled {
-  color: hsl(0, 45%, 42%);
-  text-decoration: line-through;
-  text-decoration-color: currentColor;
-}
-
-.appts-status--completed {
-  color: hsl(265, 35%, 42%);
-  opacity: 0.95;
-}
-
-@media (prefers-color-scheme: dark) {
-  .appts-status--completed {
-    color: hsl(265, 45%, 72%);
-  }
-}
+/* Bootstrap handles layout */
 </style>

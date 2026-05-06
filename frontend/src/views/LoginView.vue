@@ -59,201 +59,85 @@ export default {
 </script>
 
 <template>
-  <main class="login-page">
-    <div class="login-card">
-      <h1 class="title">Sign in</h1>
+  <section class="d-flex justify-content-center py-4">
+    <div class="card shadow-sm w-100" style="max-width: 420px">
+      <div class="card-body p-4">
+        <div class="text-center mb-3">
+          <div
+            class="rounded-circle bg-body-tertiary border d-inline-flex align-items-center justify-content-center mb-2"
+            style="width: 56px; height: 56px"
+            aria-hidden="true"
+          >
+            <i class="bi bi-shield-lock fs-2 text-body-secondary" />
+          </div>
+          <h1 class="h4 mb-1">Sign in</h1>
+          <p class="text-body-secondary mb-0">{{ hintText }}</p>
+        </div>
 
-      <div class="tabs" role="tablist" aria-label="Account type">
-        <button
-          type="button"
-          role="tab"
-          class="tab"
-          :class="{ active: activeRole === 'client' }"
-          :aria-selected="activeRole === 'client'"
-          @click="setRole('client')"
-        >
-          Client
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="tab"
-          :class="{ active: activeRole === 'expert' }"
-          :aria-selected="activeRole === 'expert'"
-          @click="setRole('expert')"
-        >
-          Expert
-        </button>
+        <div class="btn-group w-100 mb-3" role="tablist" aria-label="Account type">
+          <button
+            type="button"
+            role="tab"
+            class="btn btn-outline-primary"
+            :class="{ active: activeRole === 'client' }"
+            :aria-selected="activeRole === 'client'"
+            @click="setRole('client')"
+          >
+            <i class="bi bi-person me-1" aria-hidden="true" />
+            Client
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="btn btn-outline-primary"
+            :class="{ active: activeRole === 'expert' }"
+            :aria-selected="activeRole === 'expert'"
+            @click="setRole('expert')"
+          >
+            <i class="bi bi-person-workspace me-1" aria-hidden="true" />
+            Expert
+          </button>
+        </div>
+
+        <form @submit.prevent="onSubmit" class="d-grid gap-3">
+          <div>
+            <label class="form-label small fw-semibold">Email</label>
+            <input
+              v-model="email"
+              class="form-control"
+              type="email"
+              name="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div>
+            <label class="form-label small fw-semibold">Password</label>
+            <input
+              v-model="password"
+              class="form-control"
+              type="password"
+              name="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <div v-if="errorMessage" class="alert alert-danger mb-0" role="alert">
+            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true" />
+            {{ errorMessage }}
+          </div>
+
+          <button type="submit" class="btn btn-primary" :disabled="submitting">
+            <span v-if="submitting" class="spinner-border spinner-border-sm me-2" aria-hidden="true" />
+            {{ submitting ? 'Signing in…' : 'Sign in' }}
+          </button>
+        </form>
       </div>
-
-      <p class="hint">
-        {{ hintText }}
-      </p>
-
-      <form class="form" @submit.prevent="onSubmit">
-        <label class="field">
-          <span class="label">Email</span>
-          <input v-model="email" type="email" name="email" autocomplete="email" required />
-        </label>
-        <label class="field">
-          <span class="label">Password</span>
-          <input
-            v-model="password"
-            type="password"
-            name="password"
-            autocomplete="current-password"
-            required
-          />
-        </label>
-
-        <p v-if="errorMessage" class="error" role="alert">
-          {{ errorMessage }}
-        </p>
-
-        <button type="submit" class="submit" :disabled="submitting">
-          {{ submitting ? 'Signing in…' : 'Sign in' }}
-        </button>
-      </form>
     </div>
-  </main>
+  </section>
 </template>
 
 <style scoped>
-.login-page {
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem 3rem;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-background-soft);
-}
-
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin-bottom: 1.25rem;
-  text-align: center;
-}
-
-.tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 0.75rem;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-}
-
-.tab {
-  flex: 1;
-  padding: 0.65rem 1rem;
-  font: inherit;
-  font-size: 0.95rem;
-  border: none;
-  background: var(--color-background);
-  color: var(--color-text);
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.tab + .tab {
-  border-left: 1px solid var(--color-border);
-}
-
-.tab:hover {
-  background: var(--color-background-mute);
-}
-
-.tab.active {
-  background: var(--vt-c-indigo);
-  color: var(--vt-c-white);
-}
-
-@media (prefers-color-scheme: dark) {
-  .tab.active {
-    background: var(--vt-c-indigo);
-    color: var(--vt-c-white);
-  }
-}
-
-.hint {
-  font-size: 0.875rem;
-  color: var(--color-text);
-  opacity: 0.85;
-  margin-bottom: 1.25rem;
-  text-align: center;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-heading);
-}
-
-.field input {
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
-  font: inherit;
-}
-
-.field input:focus {
-  outline: 2px solid var(--vt-c-indigo);
-  outline-offset: 1px;
-}
-
-.error {
-  font-size: 0.875rem;
-  color: #c0392b;
-}
-
-@media (prefers-color-scheme: dark) {
-  .error {
-    color: #ff6b6b;
-  }
-}
-
-.submit {
-  margin-top: 0.25rem;
-  padding: 0.65rem 1rem;
-  border: none;
-  border-radius: 8px;
-  font: inherit;
-  font-weight: 600;
-  background: var(--vt-c-indigo);
-  color: var(--vt-c-white);
-  cursor: pointer;
-}
-
-.submit:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.submit:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
+/* Bootstrap handles layout */
 </style>

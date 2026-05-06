@@ -34,118 +34,67 @@ export default {
 </script>
 
 <template>
-  <main class="home">
-    <h1 class="title">Experts</h1>
+  <section>
+    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+      <div>
+        <h1 class="h3 mb-1">Experts</h1>
+        <p class="text-body-secondary mb-0">Browse experts and book available slots.</p>
+      </div>
+    </div>
 
-    <p v-if="loading" class="muted">Loading…</p>
-    <p v-else-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
+    <div v-if="loading" class="alert alert-secondary mb-0" role="status">Loading…</div>
+    <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">
+      {{ errorMessage }}
+    </div>
 
-    <ul v-else-if="experts.length" class="list">
-      <li v-for="expert in experts" :key="expert._id" class="item">
-        <RouterLink class="link" :to="{ name: 'expert', params: { id: expert._id } }">
-          <span class="name">{{ expert.name || 'Unnamed expert' }}</span>
-          <span v-if="expert.specialization" class="meta">{{ expert.specialization }}</span>
-          <span v-if="expert.reviewCount > 0" class="rating">
-            {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
-            {{ expert.reviewCount === 1 ? 'review' : 'reviews' }}
-          </span>
-          <span v-else class="rating rating--muted">No reviews yet</span>
+    <div v-else-if="experts.length" class="row g-3">
+      <div v-for="expert in experts" :key="expert._id" class="col-12 col-md-6">
+        <RouterLink
+          class="text-decoration-none"
+          :to="{ name: 'expert', params: { id: expert._id } }"
+        >
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex gap-3">
+              <div
+                class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width: 52px; height: 52px"
+                aria-hidden="true"
+              >
+                <i class="bi bi-person-circle fs-3 text-body-secondary" />
+              </div>
+              <div class="min-w-0">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                  <h2 class="h6 mb-1 text-body">{{ expert.name || 'Unnamed expert' }}</h2>
+                  <i class="bi bi-chevron-right text-body-secondary" aria-hidden="true" />
+                </div>
+                <div v-if="expert.specialization" class="text-body-secondary small mb-1">
+                  {{ expert.specialization }}
+                </div>
+                <div class="small">
+                  <span
+                    v-if="expert.reviewCount > 0"
+                    class="badge text-bg-warning-subtle border text-warning-emphasis"
+                    :title="`${expert.averageRating} / 5`"
+                  >
+                    <i class="bi bi-star-fill me-1" aria-hidden="true" />
+                    {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
+                    {{ expert.reviewCount === 1 ? 'review' : 'reviews' }}
+                  </span>
+                  <span v-else class="badge text-bg-light border text-body-secondary">
+                    No reviews yet
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </RouterLink>
-      </li>
-    </ul>
+      </div>
+    </div>
 
-    <p v-else class="muted">No experts yet.</p>
-  </main>
+    <div v-else class="alert alert-light border mb-0">No experts yet.</div>
+  </section>
 </template>
 
 <style scoped>
-.home {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 0 0 2rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 1.25rem;
-}
-
-.muted {
-  color: var(--color-text);
-  opacity: 0.75;
-  margin: 0;
-}
-
-.error {
-  color: #c0392b;
-  margin: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .error {
-    color: #ff6b6b;
-  }
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--color-background-soft);
-}
-
-.item {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.item:last-child {
-  border-bottom: none;
-}
-
-.link {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 1rem 1.25rem;
-  text-decoration: none;
-  color: var(--color-text);
-  transition: background 0.15s;
-}
-
-.link:hover {
-  background: var(--color-background-mute);
-}
-
-.name {
-  font-weight: 600;
-  color: var(--color-heading);
-}
-
-.meta {
-  font-size: 0.875rem;
-  opacity: 0.85;
-}
-
-.rating {
-  font-size: 0.8rem;
-  color: hsl(45, 75%, 36%);
-  font-weight: 500;
-}
-
-.rating--muted {
-  color: var(--color-text);
-  opacity: 0.65;
-  font-weight: 400;
-}
-
-@media (prefers-color-scheme: dark) {
-  .rating {
-    color: hsl(45, 80%, 68%);
-  }
-}
+/* Bootstrap handles layout */
 </style>

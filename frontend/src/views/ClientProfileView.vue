@@ -157,451 +157,214 @@ export default {
 </script>
 
 <template>
-  <main class="profile-page">
-    <h1 class="title">My Profile</h1>
-
-    <p v-if="!user" class="muted">
-      Log in as a client to view your profile.
-    </p>
-    <p v-else-if="user.role !== 'client'" class="muted">
-      This page is only available for client accounts.
-    </p>
-    <p v-else-if="loading" class="muted">Loading…</p>
-    <p v-else-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
-    <div v-else class="sections">
-      <section class="section">
-        <div class="section-head">
-          <h2 class="section-title">Profile</h2>
-          <button
-            v-if="!editingProfile"
-            type="button"
-            class="linkish"
-            @click="editingProfile = true"
-          >
-            Edit
-          </button>
+  <section>
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div
+          class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+          style="width: 56px; height: 56px"
+          aria-hidden="true"
+        >
+          <i class="bi bi-person-circle fs-2 text-body-secondary" />
         </div>
+        <div>
+          <h1 class="h3 mb-1">My Profile</h1>
+          <p class="text-body-secondary mb-0">Manage your details and reviews.</p>
+        </div>
+      </div>
+    </div>
 
-        <template v-if="!editingProfile">
-          <dl v-if="profile" class="fields">
-            <div class="row">
-              <dt>Name</dt>
-              <dd>{{ profile.name || '—' }}</dd>
-            </div>
-            <div class="row">
-              <dt>Email</dt>
-              <dd>{{ profile.email || '—' }}</dd>
-            </div>
-            <div class="row">
-              <dt>Phone</dt>
-              <dd>{{ profile.phone || '—' }}</dd>
-            </div>
-          </dl>
-        </template>
-        <div v-else class="profile-edit">
-          <label class="field-label">
-            <span>Name</span>
-            <input v-model="profileForm.name" class="field-input" type="text" />
-          </label>
-          <label class="field-label">
-            <span>Phone</span>
-            <input v-model="profileForm.phone" class="field-input" type="text" />
-          </label>
-          <p v-if="profileFormError" class="error" role="alert">{{ profileFormError }}</p>
-          <div class="profile-edit-actions">
+    <div v-if="!user" class="alert alert-light border mb-0">
+      Log in as a client to view your profile.
+    </div>
+    <div v-else-if="user.role !== 'client'" class="alert alert-light border mb-0">
+      This page is only available for client accounts.
+    </div>
+    <div v-else-if="loading" class="alert alert-secondary mb-0" role="status">Loading…</div>
+    <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">{{ errorMessage }}</div>
+    <div v-else class="d-grid gap-3">
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+            <h2 class="h5 mb-0">Profile</h2>
             <button
+              v-if="!editingProfile"
               type="button"
-              class="btn-primary"
-              :disabled="profileSaving"
-              @click="saveProfile"
+              class="btn btn-sm btn-outline-primary"
+              @click="editingProfile = true"
             >
-              {{ profileSaving ? 'Saving…' : 'Save' }}
+              <i class="bi bi-pencil me-1" aria-hidden="true" />
+              Edit
             </button>
-            <button
-              type="button"
-              class="btn-secondary"
-              :disabled="profileSaving"
-              @click="editingProfile = false"
-            >
-              Cancel
-            </button>
+          </div>
+
+          <template v-if="!editingProfile">
+            <dl v-if="profile" class="row g-2 mb-0">
+              <dt class="col-12 col-sm-3 text-body-secondary">Name</dt>
+              <dd class="col-12 col-sm-9 mb-0">{{ profile.name || '—' }}</dd>
+
+              <dt class="col-12 col-sm-3 text-body-secondary">Email</dt>
+              <dd class="col-12 col-sm-9 mb-0">{{ profile.email || '—' }}</dd>
+
+              <dt class="col-12 col-sm-3 text-body-secondary">Phone</dt>
+              <dd class="col-12 col-sm-9 mb-0">{{ profile.phone || '—' }}</dd>
+            </dl>
+          </template>
+
+          <div v-else class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Name</label>
+              <input v-model="profileForm.name" class="form-control" type="text" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label small fw-semibold">Phone</label>
+              <input v-model="profileForm.phone" class="form-control" type="text" />
+            </div>
+
+            <div v-if="profileFormError" class="col-12">
+              <div class="alert alert-danger mb-0" role="alert">{{ profileFormError }}</div>
+            </div>
+
+            <div class="col-12 d-flex gap-2 flex-wrap">
+              <button
+                type="button"
+                class="btn btn-primary"
+                :disabled="profileSaving"
+                @click="saveProfile"
+              >
+                {{ profileSaving ? 'Saving…' : 'Save' }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                :disabled="profileSaving"
+                @click="editingProfile = false"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="section">
-        <h2 class="section-title">My Bookings</h2>
-        <h3 class="subsection-title">Upcoming</h3>
-        <p v-if="!upcomingBookings.length" class="muted">No upcoming bookings.</p>
-        <ul v-else class="list">
-          <li v-for="booking in upcomingBookings" :key="booking._id" class="item">
-            <div class="info">
-              <RouterLink
-                class="expert-link"
-                :to="{ name: 'expert', params: { id: expertId(booking) } }"
-              >
-                {{ expertName(booking) }}
-              </RouterLink>
-              <p class="time">
-                {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
-              </p>
-            </div>
-          </li>
-        </ul>
-      </section>
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h5 mb-3">My Bookings</h2>
 
-      <section class="section">
-        <h3 class="subsection-title">Completed</h3>
-        <p v-if="reviewError" class="error" role="alert">{{ reviewError }}</p>
-        <p v-if="!completedBookings.length" class="muted">No completed bookings.</p>
-        <ul v-else class="list">
-          <li v-for="booking in completedBookings" :key="booking._id" class="item item--completed">
-            <div class="info">
-              <RouterLink
-                class="expert-link"
-                :to="{ name: 'expert', params: { id: expertId(booking) } }"
-              >
-                {{ expertName(booking) }}
-              </RouterLink>
-              <p class="time">
-                {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
-              </p>
-              <div v-if="booking.review" class="review-display">
-                <p class="review-stars" :title="`${booking.review.rating} / 5`">
-                  {{ starsLabel(booking.review.rating) }}
-                </p>
-                <p v-if="booking.review.text" class="review-text">{{ booking.review.text }}</p>
-              </div>
-              <div class="review-edit">
-                <p class="review-label">{{ booking.review ? 'Update your review' : 'Rate this session' }}</p>
-                <div class="review-row">
-                  <label class="review-field">
-                    <span>Rating</span>
-                    <select
-                      v-model.number="reviewDraft[booking._id].rating"
-                      class="field-input field-input--narrow"
-                    >
-                      <option v-for="n in 5" :key="n" :value="n">{{ n }} — {{ starsLabel(n) }}</option>
-                    </select>
-                  </label>
-                  <label class="review-field review-field--grow">
-                    <span>Comment (optional)</span>
-                    <textarea
-                      v-model="reviewDraft[booking._id].text"
-                      class="field-input field-textarea"
-                      rows="2"
-                    />
-                  </label>
-                </div>
-                <button
-                  type="button"
-                  class="btn-primary btn-small"
-                  :disabled="reviewSavingId === booking._id"
-                  @click="saveReview(booking._id)"
+          <h3 class="h6 text-body-secondary">Upcoming</h3>
+          <div v-if="!upcomingBookings.length" class="text-body-secondary">No upcoming bookings.</div>
+          <ul v-else class="list-group list-group-flush mb-3">
+            <li v-for="booking in upcomingBookings" :key="booking._id" class="list-group-item px-0">
+              <div class="d-flex align-items-center gap-3">
+                <div
+                  class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width: 40px; height: 40px"
+                  aria-hidden="true"
                 >
-                  {{ reviewSavingId === booking._id ? 'Saving…' : booking.review ? 'Update review' : 'Submit review' }}
-                </button>
+                  <i class="bi bi-person-circle fs-4 text-body-secondary" />
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <RouterLink
+                    class="fw-semibold text-decoration-none"
+                    :to="{ name: 'expert', params: { id: expertId(booking) } }"
+                  >
+                    {{ expertName(booking) }}
+                  </RouterLink>
+                  <div class="small text-body-secondary">
+                    {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
+                  </div>
+                </div>
+                <i class="bi bi-chevron-right text-body-secondary" aria-hidden="true" />
               </div>
-            </div>
-          </li>
-        </ul>
+            </li>
+          </ul>
+
+          <h3 class="h6 text-body-secondary">Completed</h3>
+          <div v-if="reviewError" class="alert alert-danger" role="alert">{{ reviewError }}</div>
+          <div v-if="!completedBookings.length" class="text-body-secondary">No completed bookings.</div>
+          <ul v-else class="list-group list-group-flush">
+            <li v-for="booking in completedBookings" :key="booking._id" class="list-group-item px-0">
+              <div class="d-flex align-items-start gap-3">
+                <div
+                  class="rounded-circle bg-body-tertiary border d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width: 40px; height: 40px"
+                  aria-hidden="true"
+                >
+                  <i class="bi bi-person-circle fs-4 text-body-secondary" />
+                </div>
+
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-start justify-content-between gap-2">
+                    <RouterLink
+                      class="fw-semibold text-decoration-none"
+                      :to="{ name: 'expert', params: { id: expertId(booking) } }"
+                    >
+                      {{ expertName(booking) }}
+                    </RouterLink>
+                    <span class="badge text-bg-light border">
+                      {{ formatDateTime(booking.startTime) }}
+                    </span>
+                  </div>
+                  <div class="small text-body-secondary mb-2">
+                    {{ formatDateTime(booking.startTime) }} to {{ formatDateTime(booking.endTime) }}
+                  </div>
+
+                  <div v-if="booking.review" class="border rounded p-2 bg-body-tertiary mb-2">
+                    <div class="small fw-semibold" :title="`${booking.review.rating} / 5`">
+                      {{ starsLabel(booking.review.rating) }}
+                    </div>
+                    <div v-if="booking.review.text" class="small text-body-secondary mt-1">
+                      {{ booking.review.text }}
+                    </div>
+                  </div>
+
+                  <div class="border-top pt-2">
+                    <div class="small fw-semibold mb-2">
+                      {{ booking.review ? 'Update your review' : 'Rate this session' }}
+                    </div>
+                    <div class="row g-2 align-items-end">
+                      <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold">Rating</label>
+                        <select v-model.number="reviewDraft[booking._id].rating" class="form-select">
+                          <option v-for="n in 5" :key="n" :value="n">{{ n }} — {{ starsLabel(n) }}</option>
+                        </select>
+                      </div>
+                      <div class="col-12 col-md-9">
+                        <label class="form-label small fw-semibold">Comment (optional)</label>
+                        <textarea
+                          v-model="reviewDraft[booking._id].text"
+                          class="form-control"
+                          rows="2"
+                        />
+                      </div>
+                      <div class="col-12">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-primary"
+                          :disabled="reviewSavingId === booking._id"
+                          @click="saveReview(booking._id)"
+                        >
+                          {{
+                            reviewSavingId === booking._id
+                              ? 'Saving…'
+                              : booking.review
+                                ? 'Update review'
+                                : 'Submit review'
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
       </section>
     </div>
-  </main>
+  </section>
 </template>
 
 <style scoped>
-.profile-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 0 2rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  margin: 0 0 1.25rem;
-}
-
-.sections {
-  display: grid;
-  gap: 1.25rem;
-}
-
-.section {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-background-soft);
-  padding: 1rem 1.25rem;
-}
-
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 1.05rem;
-  color: var(--color-heading);
-}
-
-.linkish {
-  font: inherit;
-  font-size: 0.85rem;
-  background: none;
-  border: none;
-  color: hsla(160, 100%, 28%, 1);
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-
-.subsection-title {
-  margin: 0 0 0.75rem;
-  font-size: 0.95rem;
-  color: var(--color-heading);
-}
-
-.fields {
-  margin: 0;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 6rem 1fr;
-  gap: 0.5rem 1rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.row:first-of-type {
-  padding-top: 0;
-}
-
-dt {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-heading);
-  opacity: 0.85;
-}
-
-dd {
-  margin: 0;
-}
-
-.profile-edit {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.field-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-heading);
-}
-
-.field-input {
-  font: inherit;
-  padding: 0.4rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
-.field-input--narrow {
-  max-width: 12rem;
-}
-
-.field-textarea {
-  resize: vertical;
-  min-height: 3rem;
-}
-
-.profile-edit-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.btn-primary {
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.4rem 0.85rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: var(--vt-c-indigo);
-  color: var(--vt-c-white);
-}
-
-.btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.85rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  background: var(--color-background-soft);
-  color: var(--color-heading);
-}
-
-.btn-small {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.65rem;
-  width: fit-content;
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.item {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.item:first-child {
-  padding-top: 0;
-}
-
-.item--completed .info {
-  gap: 0.5rem;
-}
-
-.info {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.expert-link {
-  width: fit-content;
-  font-weight: 600;
-  color: var(--color-heading);
-  text-decoration: none;
-}
-
-.expert-link:hover {
-  text-decoration: underline;
-}
-
-.time {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 0.9rem;
-}
-
-.review-display {
-  margin-top: 0.35rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  background: var(--color-background-mute);
-  border: 1px solid var(--color-border);
-}
-
-.review-stars {
-  margin: 0;
-  font-size: 0.95rem;
-  letter-spacing: 0.05em;
-  color: hsl(45, 90%, 38%);
-}
-
-.review-text {
-  margin: 0.35rem 0 0;
-  font-size: 0.875rem;
-  color: var(--color-text);
-  white-space: pre-wrap;
-}
-
-.review-edit {
-  margin-top: 0.65rem;
-  padding-top: 0.65rem;
-  border-top: 1px dashed var(--color-border);
-}
-
-.review-label {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-heading);
-}
-
-.review-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-bottom: 0.5rem;
-}
-
-.review-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.75rem;
-  color: var(--color-heading);
-}
-
-.review-field--grow {
-  flex: 1;
-  min-width: 10rem;
-}
-
-.muted {
-  color: var(--color-text);
-  opacity: 0.75;
-  margin: 0;
-}
-
-.error {
-  color: #c0392b;
-  margin: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .error {
-    color: #ff6b6b;
-  }
-
-  .review-stars {
-    color: hsl(45, 85%, 62%);
-  }
-}
-
-@media (max-width: 480px) {
-  .row {
-    grid-template-columns: 1fr;
-    gap: 0.15rem;
-  }
-}
+/* Bootstrap handles layout */
 </style>
