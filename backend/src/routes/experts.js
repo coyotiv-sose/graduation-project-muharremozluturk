@@ -2,6 +2,7 @@ var express = require('express')
 var router = express.Router()
 var Expert = require('../models/expert.js')
 var Review = require('../models/review.js')
+var Appointment = require('../models/appointment.js')
 var mongoose = require('mongoose')
 const { roleOfUser } = require('./accounts.js')
 
@@ -64,6 +65,48 @@ router.patch('/:id', async function (req, res, next) {
     res.send(await expertWithReviewStats(fresh))
   } catch (err) {
     res.status(400).json(err.message || 'Could not update profile')
+  }
+})
+
+router.get('/:id/reviews', async function (req, res, next) {
+  const { id } = req.params
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json('Expert not found')
+  }
+  try {
+    const expert = await Expert.findById(id)
+    if (!expert) return res.status(404).json('Expert not found')
+
+    const reviews = await Review.find({ expert: id }).sort({ createdAt: -1 }).populate('client', 'name')
+    const appointmentIds = reviews.map((r) => r.appointment).filter(Boolean)
+    const appointments = await Appointment.find({ _id: { $in: appointmentIds } }).select(
+      'startTime endTime expertNotes',
+    )
+    const appointmentById = new Map(appointments.map((a) => [String(a._id), a]))
+
+    const isOwnProfile = req.user && roleOfUser(req.user) === 'expert' && String(req.user._id) === String(id)
+    const out = reviews.map((review) => {
+      const appointment = appointmentById.get(String(review.appointment))
+      return {
+        _id: review._id,
+        rating: review.rating,
+        text: review.text || '',
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+        clientName: review.client?.name || 'Client',
+        appointment: appointment
+          ? {
+              _id: appointment._id,
+              startTime: appointment.startTime,
+              endTime: appointment.endTime,
+              expertNotes: isOwnProfile ? appointment.expertNotes || '' : undefined,
+            }
+          : null,
+      }
+    })
+    res.send(out)
+  } catch (err) {
+    next(err)
   }
 })
 
