@@ -61,6 +61,11 @@ require('dotenv').config()
 require('./database-connection')
 var app = express();
 
+// Cloud Run sits behind a proxy; trust it so secure cookies are handled correctly.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1)
+}
+
 app.use(
   cors({
     origin: true,
@@ -81,12 +86,14 @@ app.use(
     saveUninitialized: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 15, // 15 days
     },
     store: MongoStore.create({ clientPromise, stringify: false }),
   })
 )
 
+app.use(passport.initialize())
 app.use(passport.session())
 
 app.use((req, res, next) => {
