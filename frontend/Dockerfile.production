@@ -1,15 +1,18 @@
-FROM node:25.6.1-alpine3.23
-
-ENV NODE_ENV=production
+FROM node:alpine
 
 WORKDIR /app
 
 ADD package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci --include=dev
 
-ADD . .
+ADD eslint.config.js /app/eslint.config.js
+ADD .prettierrc.json /app/.prettierrc.json
+ADD index.html /app/index.html
+ADD vite.config.js /app/vite.config.js
+ADD vitest.config.js /app/vitest.config.js
 
-RUN npm run build
+ADD src /app/src
+ADD public /app/public
 
-CMD [ "sh", "-c", "npm run preview -- --host 0.0.0.0 --port ${PORT:-8080}" ]
+CMD ["npm","run","dev"]
