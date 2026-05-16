@@ -1,6 +1,6 @@
 <script>
 import { useAccountStore } from '@/stores/account'
-import { mapActions } from 'pinia'
+import { mapActions, mapState } from 'pinia'
 
 export default {
   name: 'LoginView',
@@ -14,6 +14,7 @@ export default {
     }
   },
   computed: {
+    ...mapState(useAccountStore, ['user']),
     hintText() {
       return this.activeRole === 'client'
         ? 'Log in with your client account.'
@@ -45,7 +46,11 @@ export default {
       this.submitting = true
       try {
         await this.login(this.email, this.password, this.activeRole)
-        await this.$router.push({ name: 'home' })
+        if (this.activeRole === 'expert' && this.user?._id) {
+          await this.$router.push({ name: 'expert', params: { id: this.user._id } })
+        } else {
+          await this.$router.push({ name: 'home' })
+        }
       } catch (e) {
         const data = e.response?.data
         this.errorMessage =

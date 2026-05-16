@@ -52,6 +52,15 @@ export default {
             My profile
           </RouterLink>
 
+          <RouterLink
+            v-else-if="user?.role === 'expert'"
+            class="btn btn-outline-secondary btn-sm"
+            :to="{ name: 'expert', params: { id: user._id } }"
+          >
+            <i class="bi bi-person-badge me-1" aria-hidden="true" />
+            My profile
+          </RouterLink>
+
           <div v-if="!user" class="btn-group" role="group" aria-label="Login as">
             <RouterLink
               class="btn btn-sm"
