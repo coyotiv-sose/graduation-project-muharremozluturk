@@ -353,7 +353,7 @@ export default {
                           type="button"
                           class="btn btn-sm btn-primary"
                           :disabled="reviewSavingId === booking._id"
-                          @click="saveReview(booking._id)"
+                          @click.prevent="saveReview(booking._id)"
                         >
                           {{
                             reviewSavingId === booking._id
