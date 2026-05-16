@@ -1,10 +1,16 @@
 <script>
 import http from '@/api/http'
+import ExpertHeroCard from '@/components/expert/ExpertHeroCard.vue'
+import ExpertReviewsCard from '@/components/expert/ExpertReviewsCard.vue'
 import { useAccountStore } from '@/stores/account'
 import { mapState } from 'pinia'
 
 export default {
   name: 'ExpertView',
+  components: {
+    ExpertHeroCard,
+    ExpertReviewsCard,
+  },
   data() {
     return {
       expert: null,
@@ -344,14 +350,6 @@ export default {
         this.cancellingApptId = null
       }
     },
-    formatRate(rate) {
-      if (rate == null || rate === '') return '—'
-      return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-      }).format(Number(rate))
-    },
     formatDateTime(iso) {
       if (iso == null || iso === '') return '—'
       const d = new Date(iso)
@@ -365,10 +363,6 @@ export default {
       if (availability == null || availability === '') return '—'
       const s = String(availability)
       return s.charAt(0).toUpperCase() + s.slice(1)
-    },
-    starsLabel(n) {
-      const r = Math.round(Number(n) || 0)
-      return '★'.repeat(r) + '☆'.repeat(Math.max(0, 5 - r))
     },
   },
 }
@@ -385,52 +379,7 @@ export default {
     <div v-else-if="errorMessage" class="alert alert-danger mb-0" role="alert">{{ errorMessage }}</div>
 
     <div v-else-if="expert" class="d-grid gap-3">
-      <section class="card modern-panel modern-hero">
-        <div class="card-body">
-          <div class="d-flex align-items-start gap-3">
-            <div
-              class="rounded-circle expert-avatar d-flex align-items-center justify-content-center flex-shrink-0"
-              style="width: 64px; height: 64px"
-              aria-hidden="true"
-            >
-              {{ (expert.name || 'E').charAt(0).toUpperCase() }}
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
-                <div>
-                  <h1 class="h3 mb-1">{{ expert.name || 'Expert' }}</h1>
-                  <div v-if="expert.specialization" class="text-body-secondary">
-                    {{ expert.specialization }}
-                  </div>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                  <span v-if="expert.reviewCount > 0" class="badge text-bg-warning-subtle border text-warning-emphasis">
-                    <i class="bi bi-star-fill me-1" aria-hidden="true" />
-                    {{ expert.averageRating }} / 5 · {{ expert.reviewCount }}
-                  </span>
-                  <span v-else class="badge text-bg-light border text-body-secondary">No reviews yet</span>
-                  <span class="badge text-bg-light border">{{ formatRate(expert.hourlyRate) }} / hour</span>
-                </div>
-              </div>
-
-              <dl class="row g-2 mt-3 mb-0">
-                <template v-if="expert.email">
-                  <dt class="col-12 col-sm-3 text-body-secondary">Email</dt>
-                  <dd class="col-12 col-sm-9 mb-0">
-                    <a class="link-primary text-decoration-none" :href="`mailto:${expert.email}`">{{ expert.email }}</a>
-                  </dd>
-                </template>
-                <template v-if="expert.phone">
-                  <dt class="col-12 col-sm-3 text-body-secondary">Phone</dt>
-                  <dd class="col-12 col-sm-9 mb-0">{{ expert.phone }}</dd>
-                </template>
-                <dt class="col-12 col-sm-3 text-body-secondary">Hourly rate</dt>
-                <dd class="col-12 col-sm-9 mb-0">{{ formatRate(expert.hourlyRate) }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ExpertHeroCard :expert="expert" />
 
       <section v-if="isViewingOwnExpertProfile" class="card modern-panel">
         <div class="card-body">
@@ -650,40 +599,12 @@ export default {
         </div>
       </section>
 
-      <section class="card modern-panel" aria-labelledby="reviews-heading">
-        <div class="card-body">
-          <h2 id="reviews-heading" class="h5 mb-3">Client reviews</h2>
-          <div v-if="reviewsLoading" class="text-body-secondary">Loading reviews…</div>
-          <div v-else-if="reviewsError" class="alert alert-danger mb-0" role="alert">{{ reviewsError }}</div>
-          <div v-else-if="!reviews.length" class="text-body-secondary">No written reviews yet.</div>
-          <ul v-else class="list-group list-group-flush">
-            <li v-for="review in reviews" :key="review._id" class="list-group-item px-0 review-row">
-              <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
-                <div>
-                  <div class="fw-semibold">{{ review.clientName || 'Client' }}</div>
-                  <div class="small text-warning-emphasis" :title="`${review.rating} / 5`">
-                    {{ starsLabel(review.rating) }} <span class="text-body-secondary ms-1">{{ review.rating }} / 5</span>
-                  </div>
-                  <div v-if="review.text" class="small text-body-secondary mt-1">
-                    {{ review.text }}
-                  </div>
-                  <div v-else class="small text-body-tertiary mt-1">No written comment.</div>
-                </div>
-                <span v-if="review.appointment?.startTime" class="badge text-bg-light border review-date-badge">
-                  {{ formatDateTime(review.appointment.startTime) }}
-                </span>
-              </div>
-              <div
-                v-if="isViewingOwnExpertProfile && review.appointment?.expertNotes"
-                class="small text-body-secondary mt-2 review-notes"
-              >
-                <span class="fw-semibold text-body">Your note:</span>
-                {{ review.appointment.expertNotes }}
-              </div>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <ExpertReviewsCard
+        :reviews="reviews"
+        :reviews-loading="reviewsLoading"
+        :reviews-error="reviewsError"
+        :is-viewing-own-expert-profile="isViewingOwnExpertProfile"
+      />
     </div>
   </section>
 </template>
@@ -719,18 +640,6 @@ export default {
   background: rgba(255, 255, 255, 0.98);
 }
 
-.modern-hero {
-  background: linear-gradient(145deg, rgba(248, 250, 255, 0.95), rgba(245, 248, 255, 0.8));
-}
-
-.expert-avatar {
-  font-weight: 600;
-  font-size: 1.15rem;
-  border: 1px solid rgba(120, 130, 160, 0.3);
-  background: linear-gradient(160deg, rgba(13, 110, 253, 0.08), rgba(13, 110, 253, 0.18));
-  color: rgba(20, 45, 85, 0.9);
-}
-
 .slot-panel {
   border: 1px solid rgba(120, 130, 160, 0.25);
   border-radius: 12px;
@@ -746,17 +655,4 @@ export default {
   border-top-color: rgba(120, 130, 160, 0.2) !important;
 }
 
-.review-row {
-  border-bottom-color: rgba(120, 130, 160, 0.18);
-}
-
-.review-date-badge {
-  white-space: normal;
-  text-align: right;
-}
-
-.review-notes {
-  border-top: 1px dashed rgba(120, 130, 160, 0.25);
-  padding-top: 0.5rem;
-}
 </style>
